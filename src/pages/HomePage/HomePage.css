@@ -1,0 +1,161 @@
+.home-page {
+  display: grid;
+  gap: var(--space-5xl);
+  padding-block: var(--space-3xl) var(--space-5xl);
+}
+
+.hero {
+  display: grid;
+  gap: var(--space-2xl);
+}
+
+.hero__intro {
+  max-width: 42rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.hero__summary {
+  margin: var(--space-lg) 0 0;
+  max-width: 36rem;
+  color: var(--color-ink-muted);
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.hero__cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xl);
+}
+
+.card.entry-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(253, 249, 244, 0.98));
+}
+
+.entry-card {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.entry-card__body {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.entry-card__header {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.entry-card__header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.entry-card__header p,
+.benefit-column p,
+.practice-loop__step p {
+  margin: 0;
+  color: var(--color-ink-muted);
+}
+
+.entry-card__form {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.entry-card__footer {
+  display: grid;
+  gap: var(--space-sm);
+  align-items: start;
+}
+
+.teacher-message {
+  min-height: 1.5rem;
+}
+
+.section-heading {
+  margin-bottom: var(--space-xl);
+}
+
+.practice-loop__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-lg);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.practice-loop__step {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-soft);
+}
+
+.practice-loop__step h3,
+.benefit-column h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.practice-loop__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 999px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}
+
+.benefits__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-lg);
+}
+
+.benefit-column {
+  padding: var(--space-xl);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.site-footer {
+  border-top: 1px solid var(--color-border-soft);
+  padding-block: var(--space-xl) var(--space-2xl);
+  color: var(--color-ink-muted);
+}
+
+@media (max-width: 920px) {
+  .hero__cards,
+  .practice-loop__grid,
+  .benefits__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-page {
+    gap: var(--space-4xl);
+    padding-block-start: var(--space-2xl);
+  }
+
+  .hero h1 {
+    max-width: 12ch;
+  }
+}
