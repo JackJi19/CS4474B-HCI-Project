@@ -6,6 +6,7 @@ interface ProgressSummaryProps {
   completedCount: number;
   masteredCount: number;
   reviewCount: number;
+  phaseLabel: string;
 }
 
 export function ProgressSummary({
@@ -14,6 +15,7 @@ export function ProgressSummary({
   completedCount,
   masteredCount,
   reviewCount,
+  phaseLabel,
 }: ProgressSummaryProps) {
   const progressPercentage = totalWords > 0 ? Math.round((completedCount / totalWords) * 100) : 0;
 
@@ -28,9 +30,12 @@ export function ProgressSummary({
           <p className="eyebrow">Session progress</p>
           <h2 id="student-progress-title">Keep moving one word at a time.</h2>
         </div>
-        <p className="student-practice__word-indicator">
-          Word {currentWordNumber} of {totalWords}
-        </p>
+        <div className="student-practice__progress-side">
+          <p className="student-practice__word-indicator">
+            Word {currentWordNumber} of {totalWords}
+          </p>
+          <p className="student-practice__phase-tag">{phaseLabel}</p>
+        </div>
       </div>
 
       <div className="student-practice__progress-metrics" aria-label="Progress summary">
@@ -56,10 +61,7 @@ export function ProgressSummary({
         className="student-practice__progress-bar"
         role="progressbar"
       >
-        <div
-          className="student-practice__progress-bar-fill"
-          style={{ width: `${progressPercentage}%` }}
-        />
+        <div className="student-practice__progress-bar-fill" style={{ width: `${progressPercentage}%` }} />
       </div>
     </Card>
   );

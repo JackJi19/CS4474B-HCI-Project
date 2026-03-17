@@ -1,36 +1,32 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { PageShell } from '../../components/layout/PageShell';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
+import {
+  readPracticeSessionSummary,
+  saveCustomList,
+  type StartingPracticeMode,
+  type StoredListSetupOptions,
+} from '../../utils/practiceStorage';
 import { buildWordInputFromList, parseWordList } from '../../utils/listParsing';
 import { ParsedReviewList } from './components/ParsedReviewList';
 import { StepIndicator } from './components/StepIndicator';
 import { SuccessPanel } from './components/SuccessPanel';
 import './TeacherSetupPage.css';
 
-type StartingPracticeMode = 'learn-first' | 'mixed-practice';
-
-interface SetupOptions {
-  startingMode: StartingPracticeMode;
-  hintSupport: boolean;
-}
+interface SetupOptions extends StoredListSetupOptions {}
 
 interface SuccessState {
   sessionName: string;
   wordCount: number;
   setupOptions: SetupOptions;
+  listId: string;
 }
 
-const setupSteps = [
-  'Enter List',
-  'Review List',
-  'Choose Options',
-  'Generate Access Code',
-];
-
+const setupSteps = ['Enter List', 'Review List', 'Choose Options', 'Generate Access Code'];
 const minimumWordCount = 3;
 
 const defaultSetupOptions: SetupOptions = {
@@ -58,6 +54,10 @@ export function TeacherSetupPage() {
   const [validationError, setValidationError] = useState('');
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
   const [generatedAccessCode, setGeneratedAccessCode] = useState('');
+
+  const teacherSummary = useMemo(() => {
+    return successState ? readPracticeSessionSummary(successState.listId) : null;
+  }, [successState]);
 
   const syncParsedState = (nextRawWordInput: string) => {
     const result = parseWordList(nextRawWordInput);
@@ -150,15 +150,20 @@ export function TeacherSetupPage() {
 
     generationLockedRef.current = true;
     const accessCode = `SPS-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const storedList = saveCustomList({
+      sessionName: sessionName.trim() || 'Untitled list',
+      accessCode,
+      words: parsedResult.parsedWords,
+      setupOptions,
+    });
 
     setGeneratedAccessCode(accessCode);
     setValidationError('');
     setSuccessState({
       sessionName: sessionName.trim() || 'Untitled list',
       wordCount: parsedResult.parsedWords.length,
-      setupOptions: {
-        ...setupOptions,
-      },
+      setupOptions: { ...setupOptions },
+      listId: storedList?.id ?? `custom-${accessCode.toLowerCase()}`,
     });
   };
 
@@ -352,6 +357,7 @@ export function TeacherSetupPage() {
               onStartAnotherList={handleStartAnotherList}
               sessionName={successState.sessionName}
               startingModeLabel={practiceModeLabels[successState.setupOptions.startingMode]}
+              teacherSummary={teacherSummary}
               wordCount={successState.wordCount}
             />
           ) : null}

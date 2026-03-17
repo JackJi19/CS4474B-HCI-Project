@@ -1,5 +1,5 @@
-import { mockLists } from '../data/mockLists';
 import type { SpellingList } from '../types/spelling';
+import { findAvailableListByEntry } from './practiceStorage';
 
 export interface StudentEntryValidationResult {
   isValid: boolean;
@@ -19,20 +19,14 @@ export function validateStudentEntry(rawValue: string): StudentEntryValidationRe
     };
   }
 
-  const loweredValue = normalizedValue.toLowerCase();
-  const matchedList = mockLists.find((list) => {
-    return (
-      list.accessCode.toLowerCase() === loweredValue ||
-      list.name.toLowerCase() === loweredValue
-    );
-  });
+  const matchedList = findAvailableListByEntry(normalizedValue);
 
   if (!matchedList) {
     return {
       isValid: false,
       normalizedValue,
       error:
-        'That code or list name was not found. Try "NATURE25" or "Week 3 Nature Words".',
+        'That code or list name was not found. Try "NATURE25" or create a teacher list first.',
     };
   }
 

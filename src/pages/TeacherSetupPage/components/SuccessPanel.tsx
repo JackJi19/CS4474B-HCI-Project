@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
+import type { PracticeSessionSummary } from '../../../utils/practiceStorage';
 
 interface SuccessPanelProps {
   accessCode: string;
@@ -8,6 +9,7 @@ interface SuccessPanelProps {
   wordCount: number;
   startingModeLabel: string;
   hintSupportEnabled: boolean;
+  teacherSummary: PracticeSessionSummary | null;
   onStartAnotherList: () => void;
 }
 
@@ -17,6 +19,7 @@ export function SuccessPanel({
   wordCount,
   startingModeLabel,
   hintSupportEnabled,
+  teacherSummary,
   onStartAnotherList,
 }: SuccessPanelProps) {
   const shareLink = `https://spelling-practice.example/join/${accessCode.toLowerCase()}`;
@@ -75,6 +78,32 @@ export function SuccessPanel({
           readOnly
           value={shareLink}
         />
+      </div>
+
+      <div className="teacher-setup__teacher-summary">
+        <p className="teacher-setup__code-label">Teacher summary view</p>
+        {teacherSummary ? (
+          <>
+            <p className="field-help">
+              {teacherSummary.sessionsCompleted} completed session(s), {teacherSummary.sessionsEndedEarly}{' '}
+              ended early, {teacherSummary.totalReviewWords} review word(s) collected.
+            </p>
+            {teacherSummary.mostMissedWords.length > 0 ? (
+              <ul className="teacher-setup__summary-chip-list">
+                {teacherSummary.mostMissedWords.map((entry) => (
+                  <li className="teacher-setup__summary-chip" key={entry.word}>
+                    {entry.word} · {entry.misses} miss{entry.misses === 1 ? '' : 'es'}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : (
+          <p className="field-help">
+            No student summary yet. After a student practices this list on this device, the most-missed
+            words will appear here.
+          </p>
+        )}
       </div>
 
       <div className="teacher-setup__success-actions">
