@@ -7,6 +7,10 @@ export const mockLists: SpellingList[] = [
     accessCode: 'NATURE25',
     wordCount: 8,
     teacherName: 'Ms. Patel',
+    settings: {
+      startingMode: 'learn-first',
+      hintSupport: true,
+    },
     practiceWords: [
       {
         id: 'nature-forest',
@@ -56,6 +60,10 @@ export const mockLists: SpellingList[] = [
     accessCode: 'CORE44',
     wordCount: 8,
     teacherName: 'Mr. Santos',
+    settings: {
+      startingMode: 'mixed-practice',
+      hintSupport: false,
+    },
     practiceWords: [
       {
         id: 'core-fraction',

@@ -44,21 +44,17 @@ The following features are currently implemented:
   - review list with per-word removal
   - lightweight practice options
   - mock access code generation with success state
-  - stronger teacher-to-student handoff between setup and practice
-  - simple teacher summary view for completed sessions
+  - local list persistence so student entry works with generated codes
+  - teacher summary view for recent completed sessions
 - **Student Practice Page**
-  - guided practice flow with Learn -> Practice -> Review Mistakes -> Quick Quiz
-  - practice modes:
-    - Type the Word
-    - Missing Letters
-    - Scramble
-  - one-word-at-a-time practice flow
-  - visible session progress
-  - immediate correct/incorrect feedback
+  - Learn -> Practice -> Review Mistakes -> Quick Quiz -> Summary
+  - practice modes: Type the Word, Missing Letters, and Scramble
+  - one-word-at-a-time guided practice flow
+  - visible stage and progress indicators
+  - immediate correct/incorrect feedback with letter-level comparison
   - review tracking for missed words
-  - Review Missed Words experience after practice
-  - Quick Quiz flow after practice and review
-  - Session summary and follow-up screens
+  - hint support when enabled by the teacher
+  - end-of-session summary with quick quiz score
 - **Mock Front-End Only Flow**
   - local mock list/session data
   - no backend, authentication, analytics, or database integration
@@ -66,6 +62,9 @@ The following features are currently implemented:
 ## Planned Next Features
 The following features are planned for later phases:
 
+- empirical usability testing with classroom participants
+- richer teacher analytics beyond the lightweight summary view
+- additional accessibility and personalization options
 - iterative usability refinement based on HCI evaluation findings
 
 These items are not fully implemented yet and should be treated as next-phase work.

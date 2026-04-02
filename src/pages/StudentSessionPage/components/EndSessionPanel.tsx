@@ -10,11 +10,9 @@ interface EndSessionPanelProps {
   masteredCount: number;
   reviewCount: number;
   reviewWords: string[];
-  primaryActionLabel: string;
-  primaryActionHelperText: string;
-  onPrimaryAction: () => void;
+  quickQuizScore: number;
+  recommendedNextStep: string;
   onRestart: () => void;
-  showRestartAction?: boolean;
 }
 
 export function EndSessionPanel({
@@ -25,11 +23,9 @@ export function EndSessionPanel({
   masteredCount,
   reviewCount,
   reviewWords,
-  primaryActionLabel,
-  primaryActionHelperText,
-  onPrimaryAction,
+  quickQuizScore,
+  recommendedNextStep,
   onRestart,
-  showRestartAction = true,
 }: EndSessionPanelProps) {
   return (
     <Card
@@ -58,11 +54,15 @@ export function EndSessionPanel({
           <span className="student-practice__metric-label">Review</span>
           <strong>{reviewCount}</strong>
         </div>
+        <div className="student-practice__metric">
+          <span className="student-practice__metric-label">Quick quiz</span>
+          <strong>{quickQuizScore}%</strong>
+        </div>
       </div>
 
       {reviewWords.length > 0 ? (
         <div className="student-practice__review-summary">
-          <p className="student-practice__review-summary-label">Words waiting for review</p>
+          <p className="student-practice__review-summary-label">Words still worth another review</p>
           <ul className="student-practice__review-chips">
             {reviewWords.map((word) => (
               <li className="student-practice__review-chip" key={word}>
@@ -74,18 +74,13 @@ export function EndSessionPanel({
       ) : null}
 
       <div className="student-practice__completion-actions">
-        <Button onClick={onPrimaryAction} type="button">
-          {primaryActionLabel}
-        </Button>
-        <p className="field-help">{primaryActionHelperText}</p>
+        <p className="student-practice__next-step-banner">Recommended next step: {recommendedNextStep}</p>
       </div>
 
       <div className="student-practice__secondary-actions">
-        {showRestartAction ? (
-          <Button onClick={onRestart} type="button" variant="secondary">
-            Restart Session
-          </Button>
-        ) : null}
+        <Button onClick={onRestart} type="button" variant="secondary">
+          Restart Session
+        </Button>
         <Link className="text-action" to="/">
           Back to Home
         </Link>

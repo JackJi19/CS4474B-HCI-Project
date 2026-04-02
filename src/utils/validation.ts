@@ -1,5 +1,5 @@
 import type { SpellingList } from '../types/spelling';
-import { findAvailableListByEntry } from './practiceStorage';
+import { findListByEntry } from './practiceStorage';
 
 export interface StudentEntryValidationResult {
   isValid: boolean;
@@ -19,14 +19,14 @@ export function validateStudentEntry(rawValue: string): StudentEntryValidationRe
     };
   }
 
-  const matchedList = findAvailableListByEntry(normalizedValue);
+  const matchedList = findListByEntry(normalizedValue);
 
   if (!matchedList) {
     return {
       isValid: false,
       normalizedValue,
       error:
-        'That code or list name was not found. Try "NATURE25" or create a teacher list first.',
+        'That code or list name was not found. Try NATURE25, CORE44, or a code from Teacher Setup.',
     };
   }
 

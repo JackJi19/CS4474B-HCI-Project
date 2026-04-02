@@ -1,57 +1,61 @@
-import type { ChangeEventHandler, FormEventHandler } from 'react';
+import type { ChangeEventHandler, FormEventHandler, ReactNode } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 
 interface PracticeCardProps {
-  modeLabel: string;
+  eyebrow: string;
   title: string;
-  currentPrompt: string;
-  currentInputValue: string;
-  currentInputError: string;
-  hasSubmittedCurrentWord: boolean;
-  hintText?: string;
+  instruction: string;
+  promptLabel: string;
+  prompt: string;
+  supportPanel?: ReactNode;
   inputLabel?: string;
-  placeholder?: string;
-  onInputChange: ChangeEventHandler<HTMLInputElement>;
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  currentInputValue?: string;
+  currentInputError?: string;
+  hasSubmittedCurrentWord?: boolean;
+  inputPlaceholder?: string;
+  inputHelpText?: string;
+  onInputChange?: ChangeEventHandler<HTMLInputElement>;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
   primaryActionLabel: string;
+  showInput?: boolean;
 }
 
 export function PracticeCard({
-  modeLabel,
+  eyebrow,
   title,
-  currentPrompt,
-  currentInputValue,
-  currentInputError,
-  hasSubmittedCurrentWord,
-  hintText,
+  instruction,
+  promptLabel,
+  prompt,
+  supportPanel,
   inputLabel = 'Your answer',
-  placeholder = 'Type your answer here',
+  currentInputValue = '',
+  currentInputError = '',
+  hasSubmittedCurrentWord = false,
+  inputPlaceholder = 'Type your answer here',
+  inputHelpText = '',
   onInputChange,
   onSubmit,
   primaryActionLabel,
+  showInput = true,
 }: PracticeCardProps) {
-  return (
-    <Card as="section" aria-labelledby="student-practice-card-title" className="student-practice__card">
-      <form className="student-practice__form" noValidate onSubmit={onSubmit}>
-        <div className="section-heading student-practice__section-heading">
-          <p className="eyebrow">{modeLabel}</p>
-          <h2 id="student-practice-card-title">{title}</h2>
-        </div>
+  const formContent = (
+    <>
+      <div className="section-heading student-practice__section-heading">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2 id="student-practice-card-title">{title}</h2>
+        <p>{instruction}</p>
+      </div>
 
-        <div className="student-practice__prompt-area">
-          <p className="student-practice__prompt-label">Prompt</p>
-          <div className="student-practice__prompt">{currentPrompt}</div>
-        </div>
+      <div className="student-practice__prompt-area">
+        <p className="student-practice__prompt-label">{promptLabel}</p>
+        <div className="student-practice__prompt">{prompt}</div>
+      </div>
 
-        {hintText ? (
-          <div className="student-practice__hint-box">
-            <p className="student-practice__prompt-label">Hint</p>
-            <p className="student-practice__hint-text">{hintText}</p>
-          </div>
-        ) : null}
+      {supportPanel ? <div className="student-practice__support-panel">{supportPanel}</div> : null}
 
+      {showInput ? (
         <div className="field-group">
           <label className="field-label" htmlFor="student-practice-answer">
             {inputLabel}
@@ -67,19 +71,31 @@ export function PracticeCard({
             maxLength={120}
             name="student-practice-answer"
             onChange={onInputChange}
-            placeholder={placeholder}
+            placeholder={inputPlaceholder}
             value={currentInputValue}
           />
           <p className="field-help" id="student-practice-help">
-            Complete the current step, then continue to the next word.
+            {inputHelpText}
           </p>
           <p className="field-error" id="student-practice-error" role="alert" aria-live="polite">
             {currentInputError || ' '}
           </p>
         </div>
+      ) : null}
 
-        <Button type="submit">{primaryActionLabel}</Button>
-      </form>
+      <Button type="submit">{primaryActionLabel}</Button>
+    </>
+  );
+
+  return (
+    <Card as="section" aria-labelledby="student-practice-card-title" className="student-practice__card">
+      {onSubmit ? (
+        <form className="student-practice__form" noValidate onSubmit={onSubmit}>
+          {formContent}
+        </form>
+      ) : (
+        <div className="student-practice__form">{formContent}</div>
+      )}
     </Card>
   );
 }

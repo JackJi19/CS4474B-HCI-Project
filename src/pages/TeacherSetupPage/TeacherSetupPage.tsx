@@ -5,25 +5,24 @@ import { PageShell } from '../../components/layout/PageShell';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
-import {
-  readPracticeSessionSummary,
-  saveCustomList,
-  type StartingPracticeMode,
-  type StoredListSetupOptions,
-} from '../../utils/practiceStorage';
 import { buildWordInputFromList, parseWordList } from '../../utils/listParsing';
+import { getSessionSummaries, saveCustomList } from '../../utils/practiceStorage';
+import type { StartingPracticeMode } from '../../types/spelling';
 import { ParsedReviewList } from './components/ParsedReviewList';
 import { StepIndicator } from './components/StepIndicator';
 import { SuccessPanel } from './components/SuccessPanel';
+import { TeacherSummaryPanel } from './components/TeacherSummaryPanel';
 import './TeacherSetupPage.css';
 
-interface SetupOptions extends StoredListSetupOptions {}
+interface SetupOptions {
+  startingMode: StartingPracticeMode;
+  hintSupport: boolean;
+}
 
 interface SuccessState {
   sessionName: string;
   wordCount: number;
   setupOptions: SetupOptions;
-  listId: string;
 }
 
 const setupSteps = ['Enter List', 'Review List', 'Choose Options', 'Generate Access Code'];
@@ -46,6 +45,7 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
 export function TeacherSetupPage() {
   const generationLockedRef = useRef(false);
   const [sessionName, setSessionName] = useState('');
+  const [teacherName, setTeacherName] = useState('');
   const [rawWordInput, setRawWordInput] = useState('');
   const [parsedWords, setParsedWords] = useState<string[]>([]);
   const [removedDuplicateCount, setRemovedDuplicateCount] = useState(0);
@@ -54,10 +54,9 @@ export function TeacherSetupPage() {
   const [validationError, setValidationError] = useState('');
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
   const [generatedAccessCode, setGeneratedAccessCode] = useState('');
+  const [summaryRefreshKey, setSummaryRefreshKey] = useState(0);
 
-  const teacherSummary = useMemo(() => {
-    return successState ? readPracticeSessionSummary(successState.listId) : null;
-  }, [successState]);
+  const recentSessions = useMemo(() => getSessionSummaries(), [summaryRefreshKey]);
 
   const syncParsedState = (nextRawWordInput: string) => {
     const result = parseWordList(nextRawWordInput);
@@ -83,6 +82,11 @@ export function TeacherSetupPage() {
   const handleSessionNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     clearFeedbackState();
     setSessionName(event.target.value);
+  };
+
+  const handleTeacherNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+    clearFeedbackState();
+    setTeacherName(event.target.value);
   };
 
   const handleStartingModeChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -123,6 +127,7 @@ export function TeacherSetupPage() {
 
   const handleStartAnotherList = () => {
     setSessionName('');
+    setTeacherName('');
     setSetupOptions(defaultSetupOptions);
     handleClearList();
   };
@@ -150,11 +155,13 @@ export function TeacherSetupPage() {
 
     generationLockedRef.current = true;
     const accessCode = `SPS-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-    const storedList = saveCustomList({
-      sessionName: sessionName.trim() || 'Untitled list',
+
+    saveCustomList({
+      sessionName,
+      teacherName,
       accessCode,
       words: parsedResult.parsedWords,
-      setupOptions,
+      settings: setupOptions,
     });
 
     setGeneratedAccessCode(accessCode);
@@ -162,9 +169,11 @@ export function TeacherSetupPage() {
     setSuccessState({
       sessionName: sessionName.trim() || 'Untitled list',
       wordCount: parsedResult.parsedWords.length,
-      setupOptions: { ...setupOptions },
-      listId: storedList?.id ?? `custom-${accessCode.toLowerCase()}`,
+      setupOptions: {
+        ...setupOptions,
+      },
     });
+    setSummaryRefreshKey((currentValue) => currentValue + 1);
   };
 
   const reviewSummary =
@@ -175,7 +184,7 @@ export function TeacherSetupPage() {
     : 'Paste or type words above to preview the cleaned list here.';
 
   const actionHelperText = successState
-    ? 'This session is ready. Edit the list or start another list to create a new code.'
+    ? 'This session is saved locally. Students can now join it from the home page with the code or list name.'
     : parsedWords.length >= minimumWordCount
       ? `${pluralize(parsedWords.length, 'word')} ready for students.`
       : `Add at least ${minimumWordCount} valid words to generate a student access code.`;
@@ -189,8 +198,8 @@ export function TeacherSetupPage() {
             <p className="eyebrow">Setup stage</p>
             <h1 id="teacher-setup-title">Teacher Setup</h1>
             <p className="teacher-setup__summary">
-              Paste a spelling list, review the cleaned words, choose a couple of optional settings,
-              and generate a student access code in one guided flow.
+              Build a spelling session in one guided pass: enter the list, review the cleaned words,
+              choose lightweight options, and generate a code that students can use right away.
             </p>
             <Link className="teacher-setup__back-link" to="/">
               Back to Home
@@ -208,7 +217,7 @@ export function TeacherSetupPage() {
               <div className="section-heading teacher-setup__section-heading">
                 <p className="eyebrow">List entry</p>
                 <h2 id="teacher-setup-list-entry-title">Enter your spelling list</h2>
-                <p>Type or paste one word per line.</p>
+                <p>Type or paste one word per line. The review area will remove duplicates and blanks.</p>
               </div>
 
               <div className="teacher-setup__field-grid">
@@ -223,9 +232,19 @@ export function TeacherSetupPage() {
                     placeholder="Example: Week 4 Sound Patterns"
                     value={sessionName}
                   />
-                  <p className="field-help">
-                    This helps you label the practice session, but students can join without it.
-                  </p>
+                </div>
+
+                <div className="field-group">
+                  <label className="field-label" htmlFor="teacher-name">
+                    Teacher name <span className="teacher-setup__optional">(optional)</span>
+                  </label>
+                  <Input
+                    id="teacher-name"
+                    name="teacher-name"
+                    onChange={handleTeacherNameChange}
+                    placeholder="Example: Ms. Patel"
+                    value={teacherName}
+                  />
                 </div>
 
                 <div className="field-group">
@@ -243,8 +262,7 @@ export function TeacherSetupPage() {
                     value={rawWordInput}
                   />
                   <p className="field-help" id="teacher-word-list-help">
-                    Paste-first is fine. Blank lines are ignored and duplicates are removed in the
-                    review area.
+                    Paste-first is fine. Blank lines are ignored and duplicates are removed in the review area.
                   </p>
                 </div>
               </div>
@@ -259,6 +277,7 @@ export function TeacherSetupPage() {
                 <div className="section-heading teacher-setup__section-heading">
                   <p className="eyebrow">Review</p>
                   <h2 id="teacher-setup-review-title">Review your list</h2>
+                  <p>Large, direct review items keep the current task obvious and reduce clean-up friction.</p>
                 </div>
                 <p aria-live="polite" className="teacher-setup__review-count">
                   {reviewSummary}
@@ -268,41 +287,33 @@ export function TeacherSetupPage() {
               <div aria-live="polite" className="teacher-setup__notice-list">
                 {removedDuplicateCount > 0 ? (
                   <p className="teacher-setup__notice">
-                    {pluralize(removedDuplicateCount, 'duplicate entry')} removed automatically.
+                    Removed {pluralize(removedDuplicateCount, 'duplicate')} from the review list.
                   </p>
                 ) : null}
                 {ignoredInvalidCount > 0 ? (
                   <p className="teacher-setup__notice">
-                    {pluralize(ignoredInvalidCount, 'blank or invalid line')} ignored.
+                    Ignored {pluralize(ignoredInvalidCount, 'empty or invalid line', 'empty or invalid lines')}.
                   </p>
                 ) : null}
               </div>
 
-              <ParsedReviewList
-                emptyMessage={reviewEmptyMessage}
-                onRemoveWord={handleRemoveWord}
-                words={parsedWords}
-              />
+              <ParsedReviewList emptyMessage={reviewEmptyMessage} onRemoveWord={handleRemoveWord} words={parsedWords} />
             </Card>
 
-            <Card
-              as="section"
-              aria-labelledby="teacher-setup-options-title"
-              className="teacher-setup__card"
-            >
+            <Card as="section" className="teacher-setup__card">
               <div className="section-heading teacher-setup__section-heading">
-                <p className="eyebrow">Optional setup</p>
-                <h2 id="teacher-setup-options-title">Practice options</h2>
-                <p>Keep this lightweight. The defaults are ready for guided practice.</p>
+                <p className="eyebrow">Options</p>
+                <h2>Choose lightweight setup options</h2>
+                <p>Keep the option set small so teachers can finish setup quickly in real classroom conditions.</p>
               </div>
 
               <div className="teacher-setup__options-grid">
                 <div className="field-group">
                   <label className="field-label" htmlFor="teacher-starting-mode">
-                    Starting practice mode
+                    Starting mode
                   </label>
                   <select
-                    className="input teacher-setup__select"
+                    className="input"
                     id="teacher-starting-mode"
                     onChange={handleStartingModeChange}
                     value={setupOptions.startingMode}
@@ -310,41 +321,31 @@ export function TeacherSetupPage() {
                     <option value="learn-first">Learn first</option>
                     <option value="mixed-practice">Mixed practice</option>
                   </select>
-                  <p className="field-help">
-                    Learn first guides students through the words before full practice starts.
-                  </p>
+                  <p className="field-help">Learn first previews each word before the practice loop begins.</p>
                 </div>
 
-                <div className="field-group">
-                  <div className="teacher-setup__toggle-row">
-                    <input
-                      checked={setupOptions.hintSupport}
-                      id="teacher-hint-support"
-                      onChange={handleHintSupportChange}
-                      type="checkbox"
-                    />
-                    <label className="field-label" htmlFor="teacher-hint-support">
-                      Enable hint support
-                    </label>
-                  </div>
-                  <p className="field-help">
-                    When enabled, students can receive a lightweight nudge during practice.
-                  </p>
-                </div>
+                <label className="teacher-setup__toggle-row">
+                  <input checked={setupOptions.hintSupport} onChange={handleHintSupportChange} type="checkbox" />
+                  <span>Enable hint support during student practice</span>
+                </label>
               </div>
             </Card>
 
             <Card as="section" className="teacher-setup__card teacher-setup__actions">
+              <div className="section-heading teacher-setup__section-heading">
+                <p className="eyebrow">Generate</p>
+                <h2>Create the student access code</h2>
+                <p>{actionHelperText}</p>
+              </div>
+
               <div className="teacher-setup__action-buttons">
-                <Button disabled={Boolean(successState)} type="submit">
-                  Generate Access Code
-                </Button>
+                <Button type="submit">Generate Access Code</Button>
                 <Button onClick={handleClearList} type="button" variant="secondary">
                   Clear List
                 </Button>
               </div>
-              <p className="field-help teacher-setup__action-help">{actionHelperText}</p>
-              <p className="field-error" aria-live="polite" role="alert">
+
+              <p className="field-error" role="alert" aria-live="polite">
                 {validationError || ' '}
               </p>
             </Card>
@@ -357,10 +358,11 @@ export function TeacherSetupPage() {
               onStartAnotherList={handleStartAnotherList}
               sessionName={successState.sessionName}
               startingModeLabel={practiceModeLabels[successState.setupOptions.startingMode]}
-              teacherSummary={teacherSummary}
               wordCount={successState.wordCount}
             />
           ) : null}
+
+          <TeacherSummaryPanel sessions={recentSessions} />
         </PageShell>
       </main>
     </>

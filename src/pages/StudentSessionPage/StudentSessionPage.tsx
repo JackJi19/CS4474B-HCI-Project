@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { PageShell } from '../../components/layout/PageShell';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
-import type { PracticeWord } from '../../types/spelling';
-import {
-  getAvailableListById,
-  savePracticeSessionSummary,
-  type StoredPracticeList,
-} from '../../utils/practiceStorage';
+import type { PracticeMode, PracticeWord, SessionSummaryRecord, SpellingList } from '../../types/spelling';
+import { getAllLists, saveSessionSummary } from '../../utils/practiceStorage';
 import { EndSessionPanel } from './components/EndSessionPanel';
 import { FeedbackPanel } from './components/FeedbackPanel';
 import { PracticeCard } from './components/PracticeCard';
@@ -21,8 +17,7 @@ interface StudentSessionRouteState {
 }
 
 type FeedbackStatus = 'idle' | 'correct' | 'incorrect';
-type SessionPhase = 'learn' | 'practice' | 'review' | 'quiz' | 'complete';
-type PracticeMode = 'type-word' | 'missing-letters' | 'scramble';
+type Stage = 'learn' | 'practice' | 'review' | 'quiz' | 'summary';
 
 interface FeedbackState {
   status: FeedbackStatus;
@@ -31,20 +26,11 @@ interface FeedbackState {
   addedToReview: boolean;
   message: string;
   progressMessage: string;
-  answerComparison: Array<{ character: string; isCorrect: boolean }>;
+  comparison?: Array<{ value: string; matches: boolean }>;
+  nextStepMessage?: string;
 }
 
-interface ExerciseView {
-  mode: PracticeMode;
-  modeLabel: string;
-  title: string;
-  prompt: string;
-  inputLabel: string;
-  placeholder: string;
-  expectedAnswer: string;
-  submittedValueResolver?: (value: string) => string;
-  hintText?: string;
-}
+const stageOrder: Stage[] = ['learn', 'practice', 'review', 'quiz', 'summary'];
 
 const idleFeedbackState: FeedbackState = {
   status: 'idle',
@@ -53,242 +39,279 @@ const idleFeedbackState: FeedbackState = {
   addedToReview: false,
   message: '',
   progressMessage: '',
-  answerComparison: [],
+  comparison: [],
+  nextStepMessage: '',
 };
 
-const practiceModeCycle: PracticeMode[] = ['type-word', 'missing-letters', 'scramble'];
-
-function normalizeValue(value: string) {
-  return value.trim().toLowerCase();
-}
-
-function buildMissingLetters(answer: string) {
-  const letters = answer.split('');
-  const hiddenIndexes: number[] = [];
-
-  letters.forEach((character, index) => {
-    const isLetter = /[a-z]/iu.test(character);
-    if (!isLetter || index === 0 || index === letters.length - 1) {
-      return;
-    }
-
-    if (index % 2 === 1) {
-      hiddenIndexes.push(index);
-    }
-  });
-
-  if (hiddenIndexes.length === 0 && letters.length > 2) {
-    hiddenIndexes.push(1);
+function shuffleWord(word: string) {
+  if (word.length < 3) {
+    return word;
   }
 
-  const pattern = letters
-    .map((character, index) => (hiddenIndexes.includes(index) ? '_' : character))
+  return `${word.slice(1)}${word[0]}`;
+}
+
+function buildMissingPattern(answer: string) {
+  const indexesToHide: number[] = [];
+
+  for (let index = 1; index < answer.length - 1; index += 2) {
+    indexesToHide.push(index);
+  }
+
+  if (indexesToHide.length === 0 && answer.length > 1) {
+    indexesToHide.push(answer.length - 1);
+  }
+
+  const pattern = answer
+    .split('')
+    .map((letter, index) => (indexesToHide.includes(index) ? '_' : letter))
     .join(' ');
-  const missingLetters = hiddenIndexes.map((index) => letters[index]).join('');
+
+  const expectedMissingLetters = indexesToHide.map((index) => answer[index]).join('');
 
   return {
     pattern,
-    missingLetters,
+    expectedMissingLetters,
   };
 }
 
-function buildScramble(answer: string) {
-  if (answer.length <= 3) {
-    return answer.split('').reverse().join('');
-  }
-
-  return `${answer.slice(1)}${answer[0]}`;
+function buildHint(word: PracticeWord) {
+  const chunks = word.answer.match(/.{1,3}/g)?.join(' - ') ?? word.answer;
+  return `Starts with ${word.answer[0].toUpperCase()}, has ${word.answer.length} letters, and can be chunked as ${chunks}.`;
 }
 
-function buildAnswerComparison(submittedAnswer: string, correctAnswer: string) {
-  const totalLength = Math.max(submittedAnswer.length, correctAnswer.length);
-  return Array.from({ length: totalLength }, (_, index) => {
-    const submittedCharacter = submittedAnswer[index] ?? '·';
-    const correctCharacter = correctAnswer[index] ?? '';
+function compareLetters(submittedAnswer: string, correctAnswer: string) {
+  const length = Math.max(submittedAnswer.length, correctAnswer.length);
+  return Array.from({ length }, (_, index) => {
+    const submittedLetter = submittedAnswer[index] ?? ' ';
+    const correctLetter = correctAnswer[index] ?? ' ';
     return {
-      character: submittedCharacter,
-      isCorrect: normalizeValue(submittedCharacter) === normalizeValue(correctCharacter),
+      value: submittedLetter,
+      matches: submittedLetter.toLowerCase() === correctLetter.toLowerCase(),
     };
   });
 }
 
-function getStartingPhase(activeList: StoredPracticeList | null): SessionPhase {
-  if (!activeList) {
-    return 'practice';
+function getModeForStage(stage: Stage, index: number): PracticeMode {
+  if (stage === 'quiz' || stage === 'review') {
+    return 'type';
   }
 
-  return activeList.setupOptions?.startingMode === 'mixed-practice' ? 'practice' : 'learn';
+  return ['type', 'missing', 'scramble'][index % 3] as PracticeMode;
 }
 
-function getPhaseMode(phase: SessionPhase, phaseIndex: number): PracticeMode {
-  if (phase === 'review') {
-    return practiceModeCycle[(phaseIndex + 1) % practiceModeCycle.length];
+function getStageLabel(stage: Stage) {
+  switch (stage) {
+    case 'learn':
+      return 'Learn';
+    case 'practice':
+      return 'Practice';
+    case 'review':
+      return 'Review Mistakes';
+    case 'quiz':
+      return 'Quick Quiz';
+    default:
+      return 'Summary';
   }
-
-  if (phase === 'quiz') {
-    return 'type-word';
-  }
-
-  return practiceModeCycle[phaseIndex % practiceModeCycle.length];
 }
 
-function buildExerciseView(
-  word: PracticeWord,
-  phase: SessionPhase,
-  mode: PracticeMode,
-  hintSupport: boolean,
-): ExerciseView {
-  const answer = word.answer;
-  const safeHint = hintSupport ? `First letter: ${answer[0]}. Word length: ${answer.length}.` : undefined;
+function getStageDescription(stage: Stage) {
+  switch (stage) {
+    case 'learn':
+      return 'Preview each word before the main practice loop begins.';
+    case 'practice':
+      return 'Work through one focused interaction at a time with immediate feedback.';
+    case 'review':
+      return 'Revisit the words that still need attention.';
+    case 'quiz':
+      return 'Finish with a short recall check after practice and review.';
+    default:
+      return 'Use the summary to decide whether to restart or finish.';
+  }
+}
 
-  if (mode === 'missing-letters') {
-    const missingLetters = buildMissingLetters(answer);
+function getNextStepLabel(stage: Stage, reviewCount: number) {
+  switch (stage) {
+    case 'learn':
+      return 'Practice';
+    case 'practice':
+      return reviewCount > 0 ? 'Review Mistakes' : 'Quick Quiz';
+    case 'review':
+      return 'Quick Quiz';
+    case 'quiz':
+      return 'Summary';
+    default:
+      return 'Back to Home';
+  }
+}
+
+function getPromptContent(stage: Stage, mode: PracticeMode, word: PracticeWord) {
+  if (stage === 'learn') {
     return {
-      mode,
-      modeLabel: phase === 'review' ? 'Review · Missing Letters' : 'Missing Letters',
-      title: 'Fill in the missing letters',
-      prompt: `${word.prompt}\n\nPattern: ${missingLetters.pattern}`,
-      inputLabel: 'Missing letters only',
-      placeholder: 'Type the hidden letters',
-      expectedAnswer: missingLetters.missingLetters,
-      submittedValueResolver: (value) => {
-        const characters = answer.split('');
-        const trimmedValue = value.trim();
-        let hiddenIndex = 0;
-        return characters
-          .map((character, index) => {
-            if (index === 0 || index === characters.length - 1 || index % 2 === 0) {
-              return character;
-            }
+      promptLabel: 'Study word',
+      prompt: word.answer,
+      instruction: 'Take a moment to study the spelling, then move to the next word when you are ready.',
+      inputLabel: '',
+      inputPlaceholder: '',
+      inputHelpText: '',
+      expectedAnswer: word.answer,
+      supportPanel: word.prompt,
+      showInput: false,
+    };
+  }
 
-            const replacement = trimmedValue[hiddenIndex] ?? '_';
-            hiddenIndex += 1;
-            return replacement;
-          })
-          .join('');
-      },
-      hintText: safeHint,
+  if (mode === 'missing') {
+    const missing = buildMissingPattern(word.answer);
+    return {
+      promptLabel: 'Complete the pattern',
+      prompt: missing.pattern,
+      instruction: 'Enter only the missing letters in order.',
+      inputLabel: 'Missing letters',
+      inputPlaceholder: 'Type the missing letters',
+      inputHelpText: 'Use the visible pattern to reconstruct the word.',
+      expectedAnswer: missing.expectedMissingLetters,
+      supportPanel: word.prompt,
+      showInput: true,
     };
   }
 
   if (mode === 'scramble') {
     return {
-      mode,
-      modeLabel: phase === 'review' ? 'Review · Scramble' : 'Scramble',
-      title: 'Unscramble the letters',
-      prompt: `${word.prompt}\n\nScrambled letters: ${buildScramble(answer).split('').join(' ')}`,
-      inputLabel: 'Correct word',
-      placeholder: 'Type the unscrambled word',
-      expectedAnswer: answer,
-      hintText: safeHint,
+      promptLabel: 'Unscramble the letters',
+      prompt: shuffleWord(word.answer),
+      instruction: 'Unscramble the letters and type the full word.',
+      inputLabel: 'Unscrambled word',
+      inputPlaceholder: 'Type the full word',
+      inputHelpText: 'Use the letter order clue and the prompt to reconstruct the spelling.',
+      expectedAnswer: word.answer,
+      supportPanel: word.prompt,
+      showInput: true,
     };
   }
 
   return {
-    mode,
-    modeLabel:
-      phase === 'quiz'
-        ? 'Quick Quiz'
-        : phase === 'review'
-          ? 'Review · Type the Word'
-          : 'Type the Word',
-    title: phase === 'quiz' ? 'Quick quiz spelling check' : 'Spell this word',
+    promptLabel: 'Prompt',
     prompt: word.prompt,
+    instruction: 'Spell the word that matches the prompt.',
     inputLabel: 'Your answer',
-    placeholder: 'Type your spelling here',
-    expectedAnswer: answer,
-    hintText: safeHint,
+    inputPlaceholder: 'Type your spelling here',
+    inputHelpText: 'Capital letters do not matter in this phase.',
+    expectedAnswer: word.answer,
+    supportPanel: null as string | null,
+    showInput: true,
   };
 }
 
 export function StudentSessionPage() {
-  const actionPhaseRef = useRef<'ready' | 'locking-after-submit' | 'submitted' | 'transitioning'>(
-    'ready',
-  );
-  const summarySavedRef = useRef(false);
   const location = useLocation();
   const routeState = (location.state as StudentSessionRouteState | null) ?? null;
-  const activeList = getAvailableListById(routeState?.listId);
-  const totalWords = activeList?.practiceWords.length ?? 0;
+  const activeList = useMemo<SpellingList | null>(() => {
+    const lists = getAllLists();
+    return lists.find((list) => list.id === routeState?.listId) ?? null;
+  }, [routeState?.listId]);
 
-  const [phase, setPhase] = useState<SessionPhase>(() => getStartingPhase(activeList));
-  const [phaseWords, setPhaseWords] = useState<PracticeWord[]>(() => activeList?.practiceWords ?? []);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const totalWords = activeList?.practiceWords.length ?? 0;
+  const initialStage: Stage = activeList?.settings?.startingMode === 'mixed-practice' ? 'practice' : 'learn';
+
+  const [stage, setStage] = useState<Stage>(initialStage);
+  const [stageIndex, setStageIndex] = useState(0);
   const [currentInputValue, setCurrentInputValue] = useState('');
   const [currentInputError, setCurrentInputError] = useState('');
   const [hasSubmittedCurrentWord, setHasSubmittedCurrentWord] = useState(false);
   const [currentFeedbackState, setCurrentFeedbackState] = useState<FeedbackState>(idleFeedbackState);
   const [masteredWordIds, setMasteredWordIds] = useState<string[]>([]);
-  const [reviewWords, setReviewWords] = useState<PracticeWord[]>([]);
-  const [completedWordIndexes, setCompletedWordIndexes] = useState<number[]>([]);
-  const [sessionComplete, setSessionComplete] = useState(false);
-  const [sessionEndedEarly, setSessionEndedEarly] = useState(false);
-  const [completionActionMessage, setCompletionActionMessage] = useState('');
+  const [reviewWordIds, setReviewWordIds] = useState<string[]>([]);
+  const [missCounts, setMissCounts] = useState<Record<string, number>>({});
   const [quizCorrectCount, setQuizCorrectCount] = useState(0);
-  const [missedCounts, setMissedCounts] = useState<Record<string, number>>({});
-
-  const currentWord = phaseWords[currentWordIndex] ?? null;
-  const currentMode = getPhaseMode(phase, currentWordIndex);
-  const hintSupport = activeList?.setupOptions?.hintSupport ?? true;
-  const currentExercise = useMemo(() => {
-    if (!currentWord) {
-      return null;
-    }
-
-    return buildExerciseView(currentWord, phase, currentMode, hintSupport);
-  }, [currentWord, phase, currentMode, hintSupport]);
-  const reviewCount = reviewWords.length;
-  const masteredCount = masteredWordIds.length;
-  const completedCount = completedWordIndexes.length;
+  const [sessionEndedEarly, setSessionEndedEarly] = useState(false);
+  const [hasSavedSummary, setHasSavedSummary] = useState(false);
 
   useEffect(() => {
-    if (sessionComplete || sessionEndedEarly) {
-      actionPhaseRef.current = 'ready';
-      return;
+    setStage(initialStage);
+  }, [initialStage]);
+
+  const reviewWords = useMemo(() => {
+    if (!activeList) {
+      return [];
     }
 
-    actionPhaseRef.current = hasSubmittedCurrentWord ? 'submitted' : 'ready';
-  }, [currentWordIndex, hasSubmittedCurrentWord, sessionComplete, sessionEndedEarly]);
+    return activeList.practiceWords.filter((word) => reviewWordIds.includes(word.id));
+  }, [activeList, reviewWordIds]);
 
-  useEffect(() => {
-    if (!activeList || summarySavedRef.current || (!sessionComplete && !sessionEndedEarly)) {
-      return;
+  const currentQueue = useMemo(() => {
+    if (!activeList) {
+      return [];
     }
 
-    savePracticeSessionSummary({
-      listId: activeList.id,
-      listName: activeList.name,
-      completed: sessionComplete,
-      totalWordsSeen: completedCount,
-      reviewWords: reviewWords.map((word) => word.answer),
-      missedCounts,
-    });
-    summarySavedRef.current = true;
-  }, [activeList, completedCount, missedCounts, reviewWords, sessionComplete, sessionEndedEarly]);
+    switch (stage) {
+      case 'learn':
+        return activeList.practiceWords;
+      case 'practice':
+        return activeList.practiceWords;
+      case 'review':
+        return reviewWords;
+      case 'quiz':
+        return activeList.practiceWords.slice(0, Math.min(activeList.practiceWords.length, 5));
+      default:
+        return [];
+    }
+  }, [activeList, reviewWords, stage]);
+
+  const currentWord = currentQueue[stageIndex] ?? null;
+  const currentMode = currentWord ? getModeForStage(stage, stageIndex) : 'type';
+  const completedCount = stage === 'learn' ? stageIndex : stage === 'summary' ? totalWords : Math.min(stageIndex, totalWords);
+  const activeStageIndex = stageOrder.indexOf(stage === 'summary' ? 'summary' : stage);
+  const currentWordNumber = stage === 'summary' ? totalWords : Math.min(stageIndex + 1, Math.max(currentQueue.length, 1));
+  const nextStepLabel = getNextStepLabel(stage, reviewWordIds.length);
+  const quickQuizScore = currentQueue.length > 0 && stage === 'summary'
+    ? Math.round((quizCorrectCount / Math.min(totalWords, 5)) * 100)
+    : Math.round((quizCorrectCount / Math.max(Math.min(totalWords, 5), 1)) * 100);
 
   const resetSession = () => {
-    summarySavedRef.current = false;
-    actionPhaseRef.current = 'ready';
-    const nextPhase = getStartingPhase(activeList);
-    setPhase(nextPhase);
-    setPhaseWords(activeList?.practiceWords ?? []);
-    setCurrentWordIndex(0);
+    setStage(initialStage);
+    setStageIndex(0);
     setCurrentInputValue('');
     setCurrentInputError('');
     setHasSubmittedCurrentWord(false);
     setCurrentFeedbackState(idleFeedbackState);
     setMasteredWordIds([]);
-    setReviewWords([]);
-    setCompletedWordIndexes([]);
-    setSessionComplete(false);
-    setSessionEndedEarly(false);
-    setCompletionActionMessage('');
+    setReviewWordIds([]);
+    setMissCounts({});
     setQuizCorrectCount(0);
-    setMissedCounts({});
+    setSessionEndedEarly(false);
+    setHasSavedSummary(false);
   };
 
+  useEffect(() => {
+    if (!activeList || stage !== 'summary' || sessionEndedEarly || hasSavedSummary) {
+      return;
+    }
+
+    const sortedMisses = [...activeList.practiceWords]
+      .sort((a, b) => (missCounts[b.id] ?? 0) - (missCounts[a.id] ?? 0))
+      .filter((word) => (missCounts[word.id] ?? 0) > 0)
+      .slice(0, 3)
+      .map((word) => word.answer);
+
+    const summary: SessionSummaryRecord = {
+      id: `${activeList.id}-${Date.now()}`,
+      listId: activeList.id,
+      listName: activeList.name,
+      accessCode: activeList.accessCode,
+      completedAt: new Date().toISOString(),
+      totalWords,
+      masteredCount: masteredWordIds.length,
+      reviewCount: reviewWordIds.length,
+      quickQuizScore,
+      mostMissedWords: sortedMisses,
+    };
+
+    saveSessionSummary(summary);
+    setHasSavedSummary(true);
+  }, [activeList, hasSavedSummary, masteredWordIds.length, missCounts, quickQuizScore, reviewWordIds.length, sessionEndedEarly, stage, totalWords]);
+
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    if (hasSubmittedCurrentWord || sessionComplete || sessionEndedEarly) {
+    if (hasSubmittedCurrentWord || stage === 'learn' || stage === 'summary') {
       return;
     }
 
@@ -298,170 +321,126 @@ export function StudentSessionPage() {
     }
   };
 
-  const moveIntoPhase = (nextPhase: SessionPhase, words: PracticeWord[]) => {
-    setPhase(nextPhase);
-    setPhaseWords(words);
-    setCurrentWordIndex(0);
+  const moveToNextStageOrWord = () => {
     setCurrentInputValue('');
     setCurrentInputError('');
     setHasSubmittedCurrentWord(false);
     setCurrentFeedbackState(idleFeedbackState);
-    setCompletionActionMessage('');
-  };
 
-  const handleAdvance = () => {
-    setCompletionActionMessage('');
-
-    if (!activeList) {
-      actionPhaseRef.current = 'ready';
+    if (stageIndex < currentQueue.length - 1) {
+      setStageIndex((currentValue) => currentValue + 1);
       return;
     }
 
-    if (phase === 'learn') {
-      if (currentWordIndex >= phaseWords.length - 1) {
-        moveIntoPhase('practice', activeList.practiceWords);
-        return;
-      }
-
-      setCurrentWordIndex((currentIndex) => currentIndex + 1);
+    if (stage === 'learn') {
+      setStage('practice');
+      setStageIndex(0);
       return;
     }
 
-    if (currentWordIndex < phaseWords.length - 1) {
-      setCurrentWordIndex((currentIndex) => currentIndex + 1);
-      setCurrentInputValue('');
-      setCurrentInputError('');
-      setHasSubmittedCurrentWord(false);
-      setCurrentFeedbackState(idleFeedbackState);
+    if (stage === 'practice') {
+      setStage(reviewWordIds.length > 0 ? 'review' : 'quiz');
+      setStageIndex(0);
       return;
     }
 
-    if (phase === 'practice') {
-      if (reviewWords.length > 0) {
-        moveIntoPhase('review', reviewWords);
-        return;
-      }
-
-      moveIntoPhase('quiz', activeList.practiceWords);
+    if (stage === 'review') {
+      setStage('quiz');
+      setStageIndex(0);
       return;
     }
 
-    if (phase === 'review') {
-      moveIntoPhase('quiz', activeList.practiceWords);
-      return;
-    }
-
-    if (phase === 'quiz') {
-      setPhase('complete');
-      setSessionComplete(true);
-      setHasSubmittedCurrentWord(false);
-      return;
+    if (stage === 'quiz') {
+      setStage('summary');
+      setStageIndex(0);
     }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!activeList || !currentWord || !currentExercise || sessionComplete || sessionEndedEarly) {
+    if (!activeList || !currentWord) {
       return;
     }
 
-    if (
-      actionPhaseRef.current === 'locking-after-submit' ||
-      actionPhaseRef.current === 'transitioning'
-    ) {
+    if (stage === 'learn') {
+      moveToNextStageOrWord();
       return;
     }
 
-    if (hasSubmittedCurrentWord || actionPhaseRef.current === 'submitted') {
-      actionPhaseRef.current = 'transitioning';
-      handleAdvance();
+    if (hasSubmittedCurrentWord) {
+      moveToNextStageOrWord();
       return;
     }
 
+    const promptContent = getPromptContent(stage, currentMode, currentWord);
     const normalizedAnswer = currentInputValue.trim();
 
     if (!normalizedAnswer) {
-      setCurrentInputError('Enter your answer before submitting.');
+      setCurrentInputError(stage === 'practice' && currentMode === 'missing' ? 'Enter the missing letters before continuing.' : 'Enter your answer before continuing.');
       return;
     }
 
-    const expectedAnswer = currentExercise.expectedAnswer;
-    const isCorrect = normalizeValue(normalizedAnswer) === normalizeValue(expectedAnswer);
-    const alreadyInReview = reviewWords.some((word) => word.id === currentWord.id);
-    const nextCompletedIndexes = completedWordIndexes.includes(currentWordIndex)
-      ? completedWordIndexes
-      : [...completedWordIndexes, currentWordIndex];
-    const submittedAnswerForDisplay = currentExercise.submittedValueResolver
-      ? currentExercise.submittedValueResolver(normalizedAnswer)
-      : normalizedAnswer;
+    const isCorrect = normalizedAnswer.toLowerCase() === promptContent.expectedAnswer.toLowerCase();
+    const alreadyInReview = reviewWordIds.includes(currentWord.id);
 
-    actionPhaseRef.current = 'locking-after-submit';
-    setCurrentInputError('');
     setHasSubmittedCurrentWord(true);
-    setCompletedWordIndexes(nextCompletedIndexes);
-
-    if (phase === 'quiz' && isCorrect) {
-      setQuizCorrectCount((currentCount) => currentCount + 1);
-    }
 
     if (isCorrect) {
-      if (!masteredWordIds.includes(currentWord.id) && phase !== 'quiz') {
-        setMasteredWordIds((currentIds) => [...currentIds, currentWord.id]);
+      if (stage !== 'quiz' && !masteredWordIds.includes(currentWord.id)) {
+        setMasteredWordIds((currentValue) => [...currentValue, currentWord.id]);
       }
+
+      if (stage === 'quiz') {
+        setQuizCorrectCount((currentValue) => currentValue + 1);
+      }
+
       setCurrentFeedbackState({
         status: 'correct',
-        submittedAnswer: submittedAnswerForDisplay,
+        submittedAnswer: normalizedAnswer,
         correctAnswer: currentWord.answer,
         addedToReview: false,
-        message: `Correct. "${currentWord.answer}" is ready for the next stage.`,
-        progressMessage: `You have completed ${nextCompletedIndexes.length} of ${phaseWords.length} items in this stage.`,
-        answerComparison: buildAnswerComparison(submittedAnswerForDisplay, currentWord.answer),
+        message: `Good work. "${currentWord.answer}" is correct.`,
+        progressMessage: `You have completed ${Math.min(stageIndex + 1, currentQueue.length)} of ${currentQueue.length} words in ${getStageLabel(stage)}.`,
+        comparison: compareLetters(currentMode === 'missing' ? promptContent.expectedAnswer : normalizedAnswer, promptContent.expectedAnswer),
+        nextStepMessage: stageIndex === currentQueue.length - 1 ? `Move to ${getNextStepLabel(stage, reviewWordIds.length)}.` : 'Continue to the next word.',
       });
       return;
     }
 
-    if (phase !== 'quiz') {
-      if (!alreadyInReview) {
-        setReviewWords((currentReviewWords) => [...currentReviewWords, currentWord]);
-      }
-      setMissedCounts((currentCounts) => ({
-        ...currentCounts,
-        [currentWord.answer]: (currentCounts[currentWord.answer] ?? 0) + 1,
+    if (stage !== 'quiz') {
+      setMissCounts((currentValue) => ({
+        ...currentValue,
+        [currentWord.id]: (currentValue[currentWord.id] ?? 0) + 1,
       }));
+
+      if (!alreadyInReview) {
+        setReviewWordIds((currentValue) => [...currentValue, currentWord.id]);
+      }
     }
 
     setCurrentFeedbackState({
       status: 'incorrect',
-      submittedAnswer: submittedAnswerForDisplay,
+      submittedAnswer: normalizedAnswer,
       correctAnswer: currentWord.answer,
-      addedToReview: phase !== 'quiz' && !alreadyInReview,
-      message: `Not quite. "${currentWord.answer}" is the correct spelling for this prompt.`,
-      progressMessage: `You have completed ${nextCompletedIndexes.length} of ${phaseWords.length} items in this stage.`,
-      answerComparison: buildAnswerComparison(submittedAnswerForDisplay, currentWord.answer),
+      addedToReview: stage !== 'quiz' && !alreadyInReview,
+      message: currentMode === 'missing'
+        ? `Those letters do not complete the word correctly yet.`
+        : `"${normalizedAnswer}" is not the correct spelling for this prompt.`,
+      progressMessage: `You have completed ${Math.min(stageIndex + 1, currentQueue.length)} of ${currentQueue.length} words in ${getStageLabel(stage)}.`,
+      comparison: compareLetters(currentMode === 'missing' ? normalizedAnswer : normalizedAnswer, promptContent.expectedAnswer),
+      nextStepMessage: stage === 'quiz' ? 'Finish the quiz, then review the summary.' : 'Continue and this word will remain visible in Review Mistakes.',
     });
   };
 
   const handleEndSession = () => {
-    actionPhaseRef.current = 'ready';
     setSessionEndedEarly(true);
+    setStage('summary');
+    setStageIndex(0);
+    setCurrentInputValue('');
     setCurrentInputError('');
     setHasSubmittedCurrentWord(false);
     setCurrentFeedbackState(idleFeedbackState);
-    setCompletionActionMessage('');
-  };
-
-  const handleCompletionAction = () => {
-    if (reviewWords.length > 0) {
-      setCompletionActionMessage(
-        `Review and quick quiz are now built into the session. This round collected ${reviewWords.length} review word(s).`,
-      );
-      return;
-    }
-
-    setCompletionActionMessage(
-      `Quick quiz completed. You answered ${quizCorrectCount} of ${totalWords} quiz words correctly.`,
-    );
   };
 
   if (!activeList) {
@@ -508,29 +487,29 @@ export function StudentSessionPage() {
     );
   }
 
-  const currentWordNumber = sessionComplete ? totalWords : Math.min(currentWordIndex + 1, phaseWords.length || totalWords);
-  const phaseLabels: Record<SessionPhase, string> = {
-    learn: 'Learn',
-    practice: 'Practice',
-    review: 'Review Mistakes',
-    quiz: 'Quick Quiz',
-    complete: 'Complete',
-  };
-  const primaryActionLabel = hasSubmittedCurrentWord
-    ? currentWordIndex === phaseWords.length - 1
-      ? phase === 'quiz'
-        ? 'Finish Session'
-        : `Continue to ${phase === 'practice' && reviewWords.length > 0 ? 'Review' : phase === 'review' ? 'Quick Quiz' : 'Next Stage'}`
-      : 'Next Word'
-    : 'Submit Answer';
-  const completionTitle = sessionEndedEarly ? 'Session ended early' : 'Practice complete';
-  const completionSummaryMessage = sessionEndedEarly
-    ? 'You ended this session before finishing every stage. You can restart when you are ready.'
-    : `You finished the learn, practice, review, and quick quiz flow. Quiz score: ${quizCorrectCount} / ${totalWords}.`;
-  const completionPrimaryActionLabel = sessionEndedEarly ? 'Restart Session' : 'Show Session Note';
-  const completionPrimaryHelperText = sessionEndedEarly
-    ? 'Restarting will begin the list again from the first step.'
-    : 'This summary now includes the full guided loop instead of a placeholder.';
+  const promptContent = currentWord ? getPromptContent(stage, currentMode, currentWord) : null;
+  const primaryActionLabel = stage === 'learn'
+    ? stageIndex === currentQueue.length - 1
+      ? 'Begin Practice'
+      : 'Next Study Word'
+    : hasSubmittedCurrentWord
+      ? stageIndex === currentQueue.length - 1
+        ? `Go to ${getNextStepLabel(stage, reviewWordIds.length)}`
+        : 'Next Word'
+      : 'Submit Answer';
+
+  const stageEyebrow = stage === 'learn' ? 'Learn stage' : stage === 'practice' ? `${getStageLabel(stage)} - ${currentMode}` : getStageLabel(stage);
+  const title = stage === 'learn'
+    ? 'Study the word before you practice'
+    : stage === 'review'
+      ? 'Review a missed word'
+      : stage === 'quiz'
+        ? 'Quick Quiz'
+        : currentMode === 'missing'
+          ? 'Fill in the missing letters'
+          : currentMode === 'scramble'
+            ? 'Unscramble the word'
+            : 'Spell this word';
 
   return (
     <>
@@ -538,64 +517,60 @@ export function StudentSessionPage() {
       <main>
         <PageShell className="student-practice-page">
           <section aria-labelledby="student-practice-title" className="student-practice__intro">
-            <p className="eyebrow">Practice stage</p>
+            <p className="eyebrow">Guided student flow</p>
             <h1 id="student-practice-title">Student Practice</h1>
             <p className="student-practice__list-name">{activeList.name}</p>
-            <p className="student-practice__mode">{phaseLabels[phase]}</p>
+            <p className="student-practice__mode">{getStageLabel(stage)}{stage === 'practice' ? ` - ${currentMode}` : ''}</p>
           </section>
 
           <ProgressSummary
+            activeStageIndex={activeStageIndex}
             completedCount={completedCount}
             currentWordNumber={currentWordNumber}
-            masteredCount={masteredCount}
-            phaseLabel={phaseLabels[phase]}
-            reviewCount={reviewCount}
-            totalWords={phaseWords.length || totalWords}
+            masteredCount={masteredWordIds.length}
+            nextStepLabel={nextStepLabel}
+            reviewCount={reviewWordIds.length}
+            stageDescription={getStageDescription(stage)}
+            stageLabel={getStageLabel(stage)}
+            stageOrder={stageOrder.map((item) => getStageLabel(item))}
+            totalWords={currentQueue.length || totalWords}
           />
 
-          {!sessionComplete && !sessionEndedEarly && phase === 'learn' && currentWord ? (
-            <Card as="section" className="student-practice__card">
-              <div className="section-heading student-practice__section-heading">
-                <p className="eyebrow">Learn</p>
-                <h2>Study this word before practice</h2>
-                <p>Read the prompt and the spelling together once before moving on.</p>
-              </div>
-              <div className="student-practice__prompt-area">
-                <p className="student-practice__prompt-label">Prompt</p>
-                <div className="student-practice__prompt">{currentWord.prompt}</div>
-              </div>
-              <div className="student-practice__learn-word">{currentWord.answer}</div>
-              <div className="student-practice__secondary-actions">
-                <Button onClick={handleAdvance} type="button">
-                  {currentWordIndex === phaseWords.length - 1 ? 'Start Practice' : 'Next Word'}
-                </Button>
-                <Button onClick={handleEndSession} type="button" variant="ghost">
-                  End Session
-                </Button>
-              </div>
-            </Card>
-          ) : !sessionComplete && !sessionEndedEarly && currentWord && currentExercise ? (
+          {stage !== 'summary' && currentWord && promptContent ? (
             <>
               <PracticeCard
                 currentInputError={currentInputError}
                 currentInputValue={currentInputValue}
-                currentPrompt={currentExercise.prompt}
+                eyebrow={stageEyebrow}
                 hasSubmittedCurrentWord={hasSubmittedCurrentWord}
-                hintText={currentExercise.hintText}
-                inputLabel={currentExercise.inputLabel}
-                modeLabel={currentExercise.modeLabel}
+                inputHelpText={promptContent.inputHelpText}
+                inputLabel={promptContent.inputLabel}
+                inputPlaceholder={promptContent.inputPlaceholder}
+                instruction={promptContent.instruction}
                 onInputChange={handleInputChange}
                 onSubmit={handleSubmit}
-                placeholder={currentExercise.placeholder}
                 primaryActionLabel={primaryActionLabel}
-                title={currentExercise.title}
+                prompt={promptContent.prompt}
+                promptLabel={promptContent.promptLabel}
+                showInput={promptContent.showInput}
+                supportPanel={
+                  <>
+                    <p className="student-practice__support-label">Meaning or clue</p>
+                    <p className="student-practice__support-copy">{currentWord.prompt}</p>
+                    {activeList.settings?.hintSupport ? (
+                      <p className="student-practice__hint">Hint: {buildHint(currentWord)}</p>
+                    ) : null}
+                  </>
+                }
+                title={title}
               />
 
               <FeedbackPanel
                 addedToReview={currentFeedbackState.addedToReview}
-                answerComparison={currentFeedbackState.answerComparison}
+                comparison={currentFeedbackState.comparison}
                 correctAnswer={currentFeedbackState.correctAnswer}
                 message={currentFeedbackState.message}
+                nextStepMessage={currentFeedbackState.nextStepMessage}
                 progressMessage={currentFeedbackState.progressMessage}
                 status={currentFeedbackState.status}
                 submittedAnswer={currentFeedbackState.submittedAnswer}
@@ -614,28 +589,18 @@ export function StudentSessionPage() {
             </>
           ) : (
             <EndSessionPanel
-              completedCount={completedCount}
-              masteredCount={masteredCount}
-              onPrimaryAction={sessionEndedEarly ? resetSession : handleCompletionAction}
+              completedCount={sessionEndedEarly ? stageIndex : totalWords}
+              masteredCount={masteredWordIds.length}
               onRestart={resetSession}
-              primaryActionHelperText={completionPrimaryHelperText}
-              primaryActionLabel={completionPrimaryActionLabel}
-              reviewCount={reviewCount}
+              quickQuizScore={quickQuizScore}
+              recommendedNextStep={reviewWordIds.length > 0 ? 'Restart the session and focus on the review words.' : 'Return to Home or create another list.'}
+              reviewCount={reviewWordIds.length}
               reviewWords={reviewWords.map((word) => word.answer)}
-              showRestartAction={!sessionEndedEarly}
-              summaryMessage={completionSummaryMessage}
-              title={completionTitle}
+              summaryMessage={sessionEndedEarly ? 'The session was ended before all stages were completed.' : 'The full guided loop is complete. Use the summary below to decide what to do next.'}
+              title={sessionEndedEarly ? 'Session ended early' : 'Practice complete'}
               totalWords={totalWords}
             />
           )}
-
-          {completionActionMessage ? (
-            <Card as="section" className="student-practice__card student-practice__completion-message">
-              <p className="field-help" role="status" aria-live="polite">
-                {completionActionMessage}
-              </p>
-            </Card>
-          ) : null}
         </PageShell>
       </main>
     </>

@@ -50,7 +50,7 @@ export function HomePage() {
 
   const handleTeacherExistingListClick = () => {
     setTeacherExistingListMessage(
-      'Teacher list storage is not added yet. For now, create a new practice list to continue.',
+      'Saved teacher lists are available through access codes or list names from the Student Practice entry.',
     );
   };
 

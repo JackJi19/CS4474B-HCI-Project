@@ -2,6 +2,11 @@ import { Card } from '../../../components/ui/Card';
 
 type FeedbackStatus = 'idle' | 'correct' | 'incorrect';
 
+interface ComparedLetter {
+  value: string;
+  matches: boolean;
+}
+
 interface FeedbackPanelProps {
   status: FeedbackStatus;
   submittedAnswer: string;
@@ -9,7 +14,8 @@ interface FeedbackPanelProps {
   addedToReview: boolean;
   message: string;
   progressMessage: string;
-  answerComparison?: Array<{ character: string; isCorrect: boolean }>;
+  comparison?: ComparedLetter[];
+  nextStepMessage?: string;
 }
 
 export function FeedbackPanel({
@@ -19,7 +25,8 @@ export function FeedbackPanel({
   addedToReview,
   message,
   progressMessage,
-  answerComparison = [],
+  comparison = [],
+  nextStepMessage,
 }: FeedbackPanelProps) {
   if (status === 'idle') {
     return null;
@@ -45,21 +52,16 @@ export function FeedbackPanel({
         <p>
           <strong>Your answer:</strong> {submittedAnswer || '—'}
         </p>
-        {answerComparison.length > 0 ? (
-          <div>
-            <p className="student-practice__comparison-label">
-              <strong>Letter check:</strong>
-            </p>
-            <div aria-label="Letter-by-letter comparison" className="student-practice__comparison-row">
-              {answerComparison.map((entry, index) => (
-                <span
-                  className={`student-practice__comparison-letter ${entry.isCorrect ? 'student-practice__comparison-letter--correct' : 'student-practice__comparison-letter--incorrect'}`}
-                  key={`${entry.character}-${index}`}
-                >
-                  {entry.character === ' ' ? '␠' : entry.character}
-                </span>
-              ))}
-            </div>
+        {comparison.length > 0 ? (
+          <div className="student-practice__comparison-row" aria-label="Letter comparison">
+            {comparison.map((letter, index) => (
+              <span
+                className={letter.matches ? 'student-practice__comparison-letter student-practice__comparison-letter--match' : 'student-practice__comparison-letter student-practice__comparison-letter--mismatch'}
+                key={`${letter.value}-${index}`}
+              >
+                {letter.value === ' ' ? '·' : letter.value}
+              </span>
+            ))}
           </div>
         ) : null}
         {status === 'incorrect' ? (
@@ -68,11 +70,16 @@ export function FeedbackPanel({
           </p>
         ) : null}
         <p>
-          <strong>Review update:</strong> {addedToReview ? 'Added to Review.' : 'Not added to Review.'}
+          <strong>Review update:</strong> {addedToReview ? 'Added to Review.' : 'No change to Review.'}
         </p>
         <p>
           <strong>Progress update:</strong> {progressMessage}
         </p>
+        {nextStepMessage ? (
+          <p>
+            <strong>Next:</strong> {nextStepMessage}
+          </p>
+        ) : null}
       </div>
     </Card>
   );

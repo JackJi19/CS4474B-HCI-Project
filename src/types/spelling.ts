@@ -1,3 +1,11 @@
+export type StartingPracticeMode = 'learn-first' | 'mixed-practice';
+export type PracticeMode = 'type' | 'missing' | 'scramble';
+
+export interface PracticeSettings {
+  startingMode: StartingPracticeMode;
+  hintSupport: boolean;
+}
+
 export interface PracticeWord {
   id: string;
   prompt: string;
@@ -11,4 +19,19 @@ export interface SpellingList {
   wordCount: number;
   teacherName: string;
   practiceWords: PracticeWord[];
+  settings?: PracticeSettings;
+  source?: 'mock' | 'local';
+}
+
+export interface SessionSummaryRecord {
+  id: string;
+  listId: string;
+  listName: string;
+  accessCode: string;
+  completedAt: string;
+  totalWords: number;
+  masteredCount: number;
+  reviewCount: number;
+  quickQuizScore: number;
+  mostMissedWords: string[];
 }
