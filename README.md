@@ -3,7 +3,7 @@
 ## Project Overview
 Spelling Practice Studio is a university Human-Computer Interaction redesign project focused on improving an older spelling-learning website. The goal is to create a cleaner, more learnable, and more feedback-rich classroom-friendly experience for both teachers and students.
 
-This repository currently contains a front-end prototype built with Vite, React, and TypeScript. The prototype emphasizes guided spelling practice, low-friction setup, and clear feedback using local mock data only.
+This repository currently contains a front-end prototype built with Vite, React, and TypeScript. The prototype emphasizes guided spelling practice, low-friction setup, clear feedback, and stronger visibility of system state using local browser storage only.
 
 ## Why We Are Redesigning the Original Experience
 The redesign is motivated by the need to improve the usability and learnability of a legacy spelling website experience. The older experience can be difficult for new users to understand quickly, especially in classroom settings where time, clarity, and task flow matter.
@@ -44,28 +44,45 @@ The following features are currently implemented:
   - review list with per-word removal
   - lightweight practice options
   - mock access code generation with success state
-  - local list persistence so student entry works with generated codes
-  - teacher summary view for recent completed sessions
+  - stronger teacher-to-student handoff between setup and practice
+  - local browser persistence for created spelling lists
+  - simple teacher summary view for completed sessions
 - **Student Practice Page**
-  - Learn -> Practice -> Review Mistakes -> Quick Quiz -> Summary
-  - practice modes: Type the Word, Missing Letters, and Scramble
-  - one-word-at-a-time guided practice flow
-  - visible stage and progress indicators
-  - immediate correct/incorrect feedback with letter-level comparison
+  - guided practice flow with Learn -> Practice -> Review Mistakes -> Quick Quiz
+  - practice modes:
+    - Type the Word
+    - Missing Letters
+    - Scramble
+  - one-word-at-a-time practice flow
+  - visible session progress and stage guidance
+  - immediate correct/incorrect feedback
+  - letter-level incorrect feedback for typed responses
+  - optional hints when enabled by the teacher
   - review tracking for missed words
-  - hint support when enabled by the teacher
-  - end-of-session summary with quick quiz score
+  - Review Missed Words experience after practice
+  - Quick Quiz flow after practice and review
+  - Session summary and follow-up screens
 - **Mock Front-End Only Flow**
-  - local mock list/session data
+  - browser-based local persistence for lists and session summaries
   - no backend, authentication, analytics, or database integration
+
+## Current Limitations
+The current prototype is intentionally limited in scope. It does **not** include:
+
+- real teacher or student accounts
+- live classroom synchronization
+- online database storage
+- analytics dashboards
+- server-side validation or APIs
+- multi-user networking
 
 ## Planned Next Features
 The following features are planned for later phases:
 
-- empirical usability testing with classroom participants
-- richer teacher analytics beyond the lightweight summary view
-- additional accessibility and personalization options
 - iterative usability refinement based on HCI evaluation findings
+- stronger visual polish and classroom-facing presentation improvements
+- broader teacher-side controls for configuring sessions
+- deeper evaluation and design refinement based on heuristic review
 
 These items are not fully implemented yet and should be treated as next-phase work.
 
@@ -75,7 +92,7 @@ These items are not fully implemented yet and should be treated as next-phase wo
 - TypeScript
 - React Router
 - CSS
-- local mock data for prototype behavior
+- browser local storage for prototype behavior
 
 ## Project Structure Overview
 ```text
@@ -103,47 +120,5 @@ src/
 ├── types/
 │   └── spelling.ts
 └── utils/
-    ├── listParsing.ts
+    ├── practiceStorage.ts
     └── validation.ts
-```
-
-## Local Setup Instructions
-### Prerequisites
-- Node.js 18+ recommended
-- npm
-
-### Setup
-1. Clone the repository.
-2. Move into the project directory.
-3. Install dependencies:
-
-```bash
-npm install
-```
-
-## Build and Run Commands
-### Start the development server
-```bash
-npm run dev
-```
-
-### Build the project
-```bash
-npm run build
-```
-
-### Preview the production build
-```bash
-npm run preview
-```
-
-## Team / Project Note
-This repository is part of a university HCI redesign project. It is currently a front-end prototype intended to support iterative design, implementation, and evaluation rather than production deployment.
-
-The current codebase should be treated as a structured prototype:
-
-- built to explore interaction design and classroom-friendly workflows
-- intentionally limited to local state and mock data
-- designed to be extended in later phases without introducing unnecessary backend complexity too early
-
-Future changes should continue to prioritize visibility, feedback, consistency, cognitive load reduction, and learnability.
