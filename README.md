@@ -3,7 +3,7 @@
 ## Project Overview
 Spelling Practice Studio is a university Human-Computer Interaction redesign project focused on improving an older spelling-learning website. The goal is to create a cleaner, more learnable, and more feedback-rich classroom-friendly experience for both teachers and students.
 
-This repository currently contains a front-end prototype built with Vite, React, and TypeScript. The prototype emphasizes guided spelling practice, low-friction setup, clear feedback, and stronger visibility of system state using local browser storage only.
+This repository currently contains a front-end prototype built with Vite, React, and TypeScript. The prototype emphasizes guided spelling practice, low-friction setup, and clear feedback using local browser storage only.
 
 ## Why We Are Redesigning the Original Experience
 The redesign is motivated by the need to improve the usability and learnability of a legacy spelling website experience. The older experience can be difficult for new users to understand quickly, especially in classroom settings where time, clarity, and task flow matter.
@@ -34,10 +34,12 @@ The following features are currently implemented:
   - student entry by access code or list name
   - teacher entry to create a practice list
   - visible guided practice loop: Learn -> Practice -> Review Mistakes -> Quick Quiz
+
 - **Shared UI and Layout Foundation**
   - reusable header, page shell, button, card, and input components
   - shared design tokens and global styling
   - React Router route structure for key pages
+
 - **Teacher Setup Page**
   - paste or type one word per line
   - automatic parsing, trimming, and duplicate removal
@@ -47,6 +49,7 @@ The following features are currently implemented:
   - stronger teacher-to-student handoff between setup and practice
   - local browser persistence for created spelling lists
   - simple teacher summary view for completed sessions
+
 - **Student Practice Page**
   - guided practice flow with Learn -> Practice -> Review Mistakes -> Quick Quiz
   - practice modes:
@@ -62,6 +65,7 @@ The following features are currently implemented:
   - Review Missed Words experience after practice
   - Quick Quiz flow after practice and review
   - Session summary and follow-up screens
+
 - **Mock Front-End Only Flow**
   - browser-based local persistence for lists and session summaries
   - no backend, authentication, analytics, or database integration
@@ -75,16 +79,6 @@ The current prototype is intentionally limited in scope. It does **not** include
 - analytics dashboards
 - server-side validation or APIs
 - multi-user networking
-
-## Planned Next Features
-The following features are planned for later phases:
-
-- iterative usability refinement based on HCI evaluation findings
-- stronger visual polish and classroom-facing presentation improvements
-- broader teacher-side controls for configuring sessions
-- deeper evaluation and design refinement based on heuristic review
-
-These items are not fully implemented yet and should be treated as next-phase work.
 
 ## Tech Stack
 - Vite
