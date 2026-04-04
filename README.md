@@ -41,32 +41,38 @@ This redesign aims to replace that fragmented experience with a more guided inte
 - **Learnability:** the flow is structured so a new user can understand what to do without guesswork.
 - **Guided interaction flow:** the product reinforces a clear sequence of setup, practice, review, quiz, and summary.
 
-## Screenshot Placeholders
+## Screenshots
 
 ### Homepage
 ![Homepage Screenshot](docs/images/homepage.png)
 
-*Placeholder: the homepage should show the split entry points for Student Practice and Teacher Setup, plus the guided practice loop.*
+*The homepage showing the split entry points for Student Practice and Teacher Setup, plus the guided practice loop.*
+
+![Homepage Screenshot 2](docs/images/homepage_2.png)
+
+*A second homepage view highlighting the classroom-friendly layout and the guided spelling-practice framing.*
 
 ### Teacher Setup
 ![Teacher Setup Screenshot](docs/images/teacher-setup.png)
 
-*Placeholder: this screenshot should show the spelling-list entry area, cleaned review list, lightweight options, and Generate Access Code action.*
+*Teacher Setup with spelling-list entry, cleaned review items, and lightweight setup options.*
+
+![Teacher Setup Screenshot 2](docs/images/teacher-setup_2.png)
+
+*A second Teacher Setup view showing the generated access-code handoff and teacher-facing session information.*
 
 ### Student Practice
 ![Student Practice Screenshot](docs/images/student-practice.png)
 
-*Placeholder: this screenshot should show the main Student Practice screen with the prompt, answer input, and visible Session Progress area.*
+*Student Practice with one-word-at-a-time interaction, visible Session Progress, and the main practice card.*
 
-### Incorrect Answer Feedback
-![Incorrect Feedback Screenshot](docs/images/incorrect-feedback.png)
+![Student Practice Screenshot 2](docs/images/student-practice_2.png)
 
-*Placeholder: this screenshot should show an incorrect response with immediate feedback, the correct spelling, Added to Review messaging, and the next step.*
+*Student Practice feedback state showing immediate response, review-state messaging, and the next step after submission.*
 
-### Teacher Summary
-![Teacher Summary Screenshot](docs/images/teacher-summary.png)
+![Student Practice Screenshot 3](docs/images/student-practice_3.png)
 
-*Placeholder: this screenshot should show the Teacher Summary with session outcome, words practiced, mastered words, words in review, and most missed words.*
+*A later-stage student view showing the guided flow continuing through review, quiz, or summary states.*
 
 ## Current Implemented Features
 
