@@ -13,15 +13,17 @@ import { ProgressSummary } from './components/ProgressSummary';
 import { evaluateStudentAnswer } from './studentSessionEvaluation';
 import {
   buildStudentHint,
+  getStudentModeLabel,
   getNextStudentStage,
   getPracticeModeForStage,
+  getStudentStageHeading,
   getStudentNextStepLabel,
   getStudentPracticeTitle,
   getStudentPrimaryActionLabel,
   getStudentPromptContent,
   getStudentStageDescription,
   getStudentStageEyebrow,
-  getStudentStageLabel,
+  getStudentStageStepLabel,
   idleFeedbackState,
   studentSessionStageOrder,
 } from './studentSessionFlow';
@@ -89,7 +91,7 @@ export function StudentSessionPage() {
 
   const activeWord = stageWords[stageIndex] ?? null;
   const practiceMode = activeWord ? getPracticeModeForStage(stage, stageIndex) : 'type';
-  const stageLabel = getStudentStageLabel(stage);
+  const stageHeading = getStudentStageHeading(stage);
   const stageDescription = getStudentStageDescription(stage);
   const nextStepLabel = getStudentNextStepLabel(stage, reviewWordIds.length);
   const activeStageIndex = studentSessionStageOrder.indexOf(stage);
@@ -304,6 +306,7 @@ export function StudentSessionPage() {
   });
   const stageEyebrow = getStudentStageEyebrow({ stage, practiceMode });
   const title = getStudentPracticeTitle({ stage, practiceMode });
+  const modeLabel = getStudentModeLabel(practiceMode);
 
   return (
     <>
@@ -315,8 +318,8 @@ export function StudentSessionPage() {
             <h1 id="student-practice-title">Student Practice</h1>
             <p className="student-practice__list-name">{activeList.name}</p>
             <p className="student-practice__mode">
-              {stageLabel}
-              {stage === 'practice' ? ` - ${practiceMode}` : ''}
+              {stageHeading}
+              {stage === 'practice' ? ` - ${modeLabel}` : ''}
             </p>
           </section>
 
@@ -328,8 +331,8 @@ export function StudentSessionPage() {
             nextStepLabel={nextStepLabel}
             reviewCount={reviewWordIds.length}
             stageDescription={stageDescription}
-            stageLabel={stageLabel}
-            stageOrder={studentSessionStageOrder.map((item) => getStudentStageLabel(item))}
+            stageLabel={stageHeading}
+            stageOrder={studentSessionStageOrder.map((item) => getStudentStageStepLabel(item))}
             totalWords={stageWords.length || totalWords}
           />
 
@@ -363,12 +366,12 @@ export function StudentSessionPage() {
               />
 
               <FeedbackPanel
-                addedToReview={currentFeedbackState.addedToReview}
                 comparison={currentFeedbackState.comparison}
                 correctAnswer={currentFeedbackState.correctAnswer}
                 message={currentFeedbackState.message}
                 nextStepMessage={currentFeedbackState.nextStepMessage}
                 progressMessage={currentFeedbackState.progressMessage}
+                reviewMessage={currentFeedbackState.reviewMessage}
                 status={currentFeedbackState.status}
                 submittedAnswer={currentFeedbackState.submittedAnswer}
               />
@@ -392,17 +395,19 @@ export function StudentSessionPage() {
               quickQuizScore={quickQuizScore}
               recommendedNextStep={
                 reviewWordIds.length > 0
-                  ? 'Restart the session and focus on the review words.'
-                  : 'Return to Home or create another list.'
+                  ? 'Restart this session to practice the words still in review.'
+                  : 'Return Home or move on to another list.'
               }
               reviewCount={reviewWordIds.length}
               reviewWords={reviewWords.map((word) => word.answer)}
               summaryMessage={
                 sessionEndedEarly
-                  ? 'The session was ended before all stages were completed.'
-                  : 'The full guided loop is complete. Use the summary below to decide what to do next.'
+                  ? 'This session ended before the full practice loop was complete. Restart the session to begin again.'
+                  : reviewWordIds.length > 0
+                    ? 'This session is complete. Some words are still in review, so the next step is to practice those words again.'
+                    : 'This session is complete. You mastered the full set, so the next step is to return home or move on to another list.'
               }
-              title={sessionEndedEarly ? 'Session ended early' : 'Practice complete'}
+              title="Session Summary"
               totalWords={totalWords}
             />
           )}

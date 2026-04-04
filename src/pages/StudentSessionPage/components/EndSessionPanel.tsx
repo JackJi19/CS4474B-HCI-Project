@@ -34,35 +34,35 @@ export function EndSessionPanel({
       className="student-practice__card student-practice__end-panel"
     >
       <div className="section-heading student-practice__section-heading">
-        <p className="eyebrow">Session summary</p>
+        <p className="eyebrow">Session Summary</p>
         <h2 id="student-end-session-title">{title}</h2>
         <p>{summaryMessage}</p>
       </div>
 
       <div className="student-practice__completion-grid">
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Completed</span>
+          <span className="student-practice__metric-label">Completed:</span>
           <strong>
             {completedCount} / {totalWords}
           </strong>
         </div>
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Mastered</span>
+          <span className="student-practice__metric-label">Mastered:</span>
           <strong>{masteredCount}</strong>
         </div>
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Review</span>
+          <span className="student-practice__metric-label">In Review:</span>
           <strong>{reviewCount}</strong>
         </div>
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Quick quiz</span>
+          <span className="student-practice__metric-label">Quick Quiz Score:</span>
           <strong>{quickQuizScore}%</strong>
         </div>
       </div>
 
       {reviewWords.length > 0 ? (
         <div className="student-practice__review-summary">
-          <p className="student-practice__review-summary-label">Words still worth another review</p>
+          <p className="student-practice__review-summary-label">Words still in review</p>
           <ul className="student-practice__review-chips">
             {reviewWords.map((word) => (
               <li className="student-practice__review-chip" key={word}>
@@ -74,7 +74,7 @@ export function EndSessionPanel({
       ) : null}
 
       <div className="student-practice__completion-actions">
-        <p className="student-practice__next-step-banner">Recommended next step: {recommendedNextStep}</p>
+        <p className="student-practice__next-step-banner">Next Step: {recommendedNextStep}</p>
       </div>
 
       <div className="student-practice__secondary-actions">

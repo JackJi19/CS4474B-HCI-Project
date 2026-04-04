@@ -35,7 +35,7 @@ export function ProgressSummary({
     >
       <div className="student-practice__progress-heading">
         <div className="section-heading student-practice__section-heading">
-          <p className="eyebrow">Session progress</p>
+          <p className="eyebrow">Session Progress</p>
           <h2 id="student-progress-title">{stageLabel}</h2>
           <p>{stageDescription}</p>
         </div>
@@ -43,7 +43,7 @@ export function ProgressSummary({
           <p className="student-practice__word-indicator">
             Word {currentWordNumber} of {totalWords}
           </p>
-          <p className="student-practice__next-step">Next: {nextStepLabel}</p>
+          <p className="student-practice__next-step">Next Step: {nextStepLabel}</p>
         </div>
       </div>
 
@@ -60,15 +60,15 @@ export function ProgressSummary({
 
       <div className="student-practice__progress-metrics" aria-label="Progress summary">
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Completed</span>
+          <span className="student-practice__metric-label">Completed:</span>
           <strong>{completedCount}</strong>
         </div>
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Mastered</span>
+          <span className="student-practice__metric-label">Mastered:</span>
           <strong>{masteredCount}</strong>
         </div>
         <div className="student-practice__metric">
-          <span className="student-practice__metric-label">Review</span>
+          <span className="student-practice__metric-label">In Review:</span>
           <strong>{reviewCount}</strong>
         </div>
       </div>

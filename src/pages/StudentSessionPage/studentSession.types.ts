@@ -14,6 +14,7 @@ export interface FeedbackState {
   correctAnswer: string;
   addedToReview: boolean;
   message: string;
+  reviewMessage?: string;
   progressMessage: string;
   comparison: ComparedLetter[];
   nextStepMessage?: string;

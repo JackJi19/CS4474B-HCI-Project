@@ -15,6 +15,7 @@ export const idleFeedbackState: FeedbackState = {
   correctAnswer: '',
   addedToReview: false,
   message: '',
+  reviewMessage: '',
   progressMessage: '',
   comparison: [],
   nextStepMessage: '',
@@ -65,33 +66,58 @@ export function getPracticeModeForStage(stage: SessionStage, index: number): Pra
   return ['type', 'missing', 'scramble'][index % 3] as PracticeMode;
 }
 
-export function getStudentStageLabel(stage: SessionStage) {
+export function getStudentModeLabel(practiceMode: PracticeMode) {
+  switch (practiceMode) {
+    case 'missing':
+      return 'Missing Letters';
+    case 'scramble':
+      return 'Unscramble';
+    default:
+      return 'Type the Word';
+  }
+}
+
+export function getStudentStageHeading(stage: SessionStage) {
   switch (stage) {
     case 'learn':
-      return 'Learn';
     case 'practice':
-      return 'Practice';
+      return 'Student Practice';
     case 'review':
       return 'Review Mistakes';
     case 'quiz':
       return 'Quick Quiz';
     default:
-      return 'Summary';
+      return 'Session Summary';
+  }
+}
+
+export function getStudentStageStepLabel(stage: SessionStage) {
+  switch (stage) {
+    case 'learn':
+      return 'Learn';
+    case 'practice':
+      return 'Student Practice';
+    case 'review':
+      return 'Review Mistakes';
+    case 'quiz':
+      return 'Quick Quiz';
+    default:
+      return 'Session Summary';
   }
 }
 
 export function getStudentStageDescription(stage: SessionStage) {
   switch (stage) {
     case 'learn':
-      return 'Preview each word before the main practice loop begins.';
+      return 'Study each word first. When this stage ends, Student Practice begins.';
     case 'practice':
-      return 'Work through one focused interaction at a time with immediate feedback.';
+      return 'Work through one word at a time with immediate feedback. Missed words move into Review Mistakes.';
     case 'review':
-      return 'Revisit the words that still need attention.';
+      return 'Practice the words that are still in review. When this stage ends, the Quick Quiz begins.';
     case 'quiz':
-      return 'Finish with a short recall check after practice and review.';
+      return 'Use this short check to finish the session. When the last word is done, you will see the Session Summary.';
     default:
-      return 'Use the summary to decide whether to restart or finish.';
+      return 'Review what you mastered, what stays in review, and choose the next step.';
   }
 }
 
@@ -113,13 +139,13 @@ export function getNextStudentStage(stage: SessionStage, reviewCount: number): S
 export function getStudentNextStepLabel(stage: SessionStage, reviewCount: number) {
   switch (stage) {
     case 'learn':
-      return 'Practice';
+      return 'Student Practice';
     case 'practice':
       return reviewCount > 0 ? 'Review Mistakes' : 'Quick Quiz';
     case 'review':
       return 'Quick Quiz';
     case 'quiz':
-      return 'Summary';
+      return 'Session Summary';
     default:
       return 'Back to Home';
   }
@@ -190,7 +216,7 @@ export function getStudentPrimaryActionLabel({
   reviewCount,
 }: StudentPrimaryActionInput) {
   if (stage === 'learn') {
-    return stageIndex === stageWordCount - 1 ? 'Begin Practice' : 'Next Study Word';
+    return stageIndex === stageWordCount - 1 ? 'Begin Student Practice' : 'Next Study Word';
   }
 
   if (hasSubmittedCurrentWord) {
@@ -204,19 +230,19 @@ export function getStudentPrimaryActionLabel({
 
 export function getStudentStageEyebrow({ stage, practiceMode }: StudentTitleInput) {
   return stage === 'learn'
-    ? 'Learn stage'
+    ? 'Student Practice'
     : stage === 'practice'
-      ? `${getStudentStageLabel(stage)} - ${practiceMode}`
-      : getStudentStageLabel(stage);
+      ? `${getStudentStageHeading(stage)} - ${getStudentModeLabel(practiceMode)}`
+      : getStudentStageHeading(stage);
 }
 
 export function getStudentPracticeTitle({ stage, practiceMode }: StudentTitleInput) {
   if (stage === 'learn') {
-    return 'Study the word before you practice';
+    return 'Study this word';
   }
 
   if (stage === 'review') {
-    return 'Review a missed word';
+    return 'Practice this word again';
   }
 
   if (stage === 'quiz') {

@@ -1,7 +1,7 @@
 import type { PracticeMode } from '../../types/spelling';
 import {
   getStudentNextStepLabel,
-  getStudentStageLabel,
+  getStudentStageHeading,
 } from './studentSessionFlow';
 import type { ComparedLetter, FeedbackState, SessionStage } from './studentSession.types';
 
@@ -54,7 +54,27 @@ function getEmptySubmissionMessage(stage: SessionStage, practiceMode: PracticeMo
 }
 
 function buildProgressMessage(stage: SessionStage, stageIndex: number, queueLength: number) {
-  return `You have completed ${Math.min(stageIndex + 1, queueLength)} of ${queueLength} words in ${getStudentStageLabel(stage)}.`;
+  return `Word ${Math.min(stageIndex + 1, queueLength)} of ${queueLength} completed in ${getStudentStageHeading(stage)}.`;
+}
+
+function buildReviewMessage(stage: SessionStage, addedToReview: boolean) {
+  if (stage === 'quiz') {
+    return 'The review list stays the same during Quick Quiz.';
+  }
+
+  if (addedToReview) {
+    return 'Added to Review.';
+  }
+
+  return 'Already in Review.';
+}
+
+function buildNextStepMessage(stage: SessionStage, stageIndex: number, queueLength: number, reviewCount: number) {
+  if (stageIndex === queueLength - 1) {
+    return `Move to ${getStudentNextStepLabel(stage, reviewCount)}.`;
+  }
+
+  return 'Select Next Word to continue.';
 }
 
 export function evaluateStudentAnswer({
@@ -100,13 +120,10 @@ export function evaluateStudentAnswer({
         submittedAnswer: normalizedAnswer,
         correctAnswer,
         addedToReview: false,
-        message: `Good work. "${correctAnswer}" is correct.`,
+        message: `You spelled "${correctAnswer}" correctly.`,
         progressMessage: buildProgressMessage(stage, stageIndex, queueLength),
         comparison,
-        nextStepMessage:
-          stageIndex === queueLength - 1
-            ? `Move to ${getStudentNextStepLabel(stage, reviewWordIds.length)}.`
-            : 'Continue to the next word.',
+        nextStepMessage: buildNextStepMessage(stage, stageIndex, queueLength, reviewWordIds.length),
       },
     };
   }
@@ -123,16 +140,16 @@ export function evaluateStudentAnswer({
       submittedAnswer: normalizedAnswer,
       correctAnswer,
       addedToReview,
+      reviewMessage: buildReviewMessage(stage, addedToReview),
       message:
-        practiceMode === 'missing'
-          ? 'Those letters do not complete the word correctly yet.'
-          : `"${normalizedAnswer}" is not the correct spelling for this prompt.`,
+        stage === 'quiz'
+          ? 'Check the correct spelling before you move to the next quiz word.'
+          : practiceMode === 'missing'
+          ? 'Check the missing letters, then try this word again when it appears in review.'
+          : 'Check the correct spelling, then try this word again when it appears in review.',
       progressMessage: buildProgressMessage(stage, stageIndex, queueLength),
       comparison,
-      nextStepMessage:
-        stage === 'quiz'
-          ? 'Finish the quiz, then review the summary.'
-          : 'Continue and this word will remain visible in Review Mistakes.',
+      nextStepMessage: buildNextStepMessage(stage, stageIndex, queueLength, reviewWordIds.length),
     },
   };
 }
