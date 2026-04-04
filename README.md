@@ -46,33 +46,20 @@ This redesign aims to replace that fragmented experience with a more guided inte
 ### Homepage
 ![Homepage Screenshot](docs/images/homepage.png)
 
-*The homepage showing the split entry points for Student Practice and Teacher Setup, plus the guided practice loop.*
-
 ![Homepage Screenshot 2](docs/images/homepage_2.png)
 
-*A second homepage view highlighting the classroom-friendly layout and the guided spelling-practice framing.*
 
 ### Teacher Setup
 ![Teacher Setup Screenshot](docs/images/teacher-setup.png)
 
-*Teacher Setup with spelling-list entry, cleaned review items, and lightweight setup options.*
-
 ![Teacher Setup Screenshot 2](docs/images/teacher-setup_2.png)
-
-*A second Teacher Setup view showing the generated access-code handoff and teacher-facing session information.*
 
 ### Student Practice
 ![Student Practice Screenshot](docs/images/student-practice.png)
 
-*Student Practice with one-word-at-a-time interaction, visible Session Progress, and the main practice card.*
-
 ![Student Practice Screenshot 2](docs/images/student-practice_2.png)
 
-*Student Practice feedback state showing immediate response, review-state messaging, and the next step after submission.*
-
 ![Student Practice Screenshot 3](docs/images/student-practice_3.png)
-
-*A later-stage student view showing the guided flow continuing through review, quiz, or summary states.*
 
 ## Current Implemented Features
 
