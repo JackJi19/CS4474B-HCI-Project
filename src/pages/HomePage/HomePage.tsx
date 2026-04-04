@@ -50,7 +50,7 @@ export function HomePage() {
 
   const handleTeacherExistingListClick = () => {
     setTeacherExistingListMessage(
-      'Saved teacher lists are available through access codes or list names from the Student Practice entry.',
+      'Use the Student Practice card with the access code or list name to open an existing session.',
     );
   };
 
@@ -64,15 +64,15 @@ export function HomePage() {
               <p className="eyebrow">Guided spelling practice</p>
               <h1 id="home-title">Spelling Practice Studio</h1>
               <p className="hero__summary">
-                A calm practice space where students move through each spelling list with clear
-                steps and teachers can set up learning quickly.
+                A calm spelling practice space with clear steps, visible progress, immediate
+                feedback, and lightweight teacher setup.
               </p>
             </div>
 
             <div className="hero__cards">
               <EntryCard
                 title="Student Practice"
-                description="Join a spelling activity with an access code or a shared list name."
+                description="Start guided spelling practice with an access code or a shared list name."
                 onSubmit={handleStudentSubmit}
                 actionArea={
                   <>
@@ -99,7 +99,7 @@ export function HomePage() {
                         }}
                       />
                       <p className="field-help" id="student-entry-help">
-                        Students can enter either format to start the guided loop.
+                        Enter either one to start Student Practice.
                       </p>
                       <p
                         className="field-error"
@@ -119,7 +119,7 @@ export function HomePage() {
 
               <EntryCard
                 title="Teacher Setup"
-                description="Create a classroom practice list that students can join right away."
+                description="Create a classroom practice list and generate a student access code."
                 actionArea={
                   <>
                     <Button fullWidth onClick={handleTeacherSetup}>
@@ -157,7 +157,7 @@ export function HomePage() {
       </main>
       <footer className="site-footer">
         <PageShell>
-          <p>Designed for clear spelling routines in classrooms and at home.</p>
+          <p>Designed for guided spelling practice in classrooms and at home.</p>
         </PageShell>
       </footer>
     </>

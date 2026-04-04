@@ -299,7 +299,8 @@
 
   .teacher-setup__review-header,
   .teacher-setup__parsed-item,
-  .teacher-setup__success-actions {
+  .teacher-setup__success-actions,
+  .teacher-setup__session-header {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -307,40 +308,139 @@
   .teacher-setup__review-count {
     white-space: normal;
   }
+
+  .teacher-setup__session-status {
+    white-space: normal;
+  }
 }
 
-.teacher-setup__summary-table-wrap {
-  overflow-x: auto;
+.teacher-setup__summary-list {
+  display: grid;
+  gap: var(--space-lg);
 }
 
-.teacher-setup__summary-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: rgba(255, 255, 255, 0.72);
+.teacher-setup__session-result {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
   border: 1px solid var(--color-border-soft);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.78);
 }
 
-.teacher-setup__summary-table th,
-.teacher-setup__summary-table td {
-  padding: var(--space-md) var(--space-lg);
-  text-align: left;
-  border-bottom: 1px solid rgba(77, 95, 110, 0.12);
-  vertical-align: top;
+.teacher-setup__session-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
 }
 
-.teacher-setup__summary-table th {
-  background: rgba(215, 238, 235, 0.45);
-  color: var(--color-accent-strong);
+.teacher-setup__session-heading {
+  display: grid;
+  gap: var(--space-xs);
 }
 
-.teacher-setup__summary-table tbody tr:last-child td {
-  border-bottom: 0;
+.teacher-setup__session-heading h3,
+.teacher-setup__session-meta,
+.teacher-setup__summary-label,
+.teacher-setup__summary-helper {
+  margin: 0;
 }
 
+.teacher-setup__session-heading h3 {
+  font-size: 1.18rem;
+}
+
+.teacher-setup__session-meta,
+.teacher-setup__summary-helper,
 .teacher-setup__summary-subtext {
   color: var(--color-ink-muted);
-  font-size: 0.9rem;
-  margin-top: 0.15rem;
+  font-size: 0.95rem;
+}
+
+.teacher-setup__session-status {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 999px;
+  background: rgba(215, 238, 235, 0.55);
+  color: var(--color-accent-strong);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.teacher-setup__session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-md);
+}
+
+.teacher-setup__summary-stat {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-soft);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.teacher-setup__summary-stat--outcome {
+  background: linear-gradient(180deg, rgba(246, 252, 250, 0.98), rgba(239, 248, 246, 0.92));
+  border-color: rgba(14, 107, 101, 0.16);
+}
+
+.teacher-setup__summary-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+
+.teacher-setup__summary-value {
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.teacher-setup__most-missed {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.teacher-setup__most-missed-heading {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.teacher-setup__most-missed-list {
+  display: grid;
+  gap: var(--space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.teacher-setup__most-missed-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-soft);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.teacher-setup__most-missed-rank {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(37, 49, 61, 0.08);
+  color: var(--color-ink);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.teacher-setup__most-missed-word {
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }

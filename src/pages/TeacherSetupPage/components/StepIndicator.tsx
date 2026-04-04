@@ -8,8 +8,9 @@ export function StepIndicator({ steps }: StepIndicatorProps) {
   return (
     <Card as="section" className="teacher-setup__card teacher-setup__steps">
       <div className="section-heading teacher-setup__section-heading">
-        <p className="eyebrow">Setup path</p>
-        <h2>Set up a session in one guided pass.</h2>
+        <p className="eyebrow">Teacher Setup</p>
+        <h2>Teacher Setup in one guided pass.</h2>
+        <p>Enter the list, review it, choose options, and generate the student access code.</p>
       </div>
       <ol className="teacher-setup__step-list">
         {steps.map((step, index) => (

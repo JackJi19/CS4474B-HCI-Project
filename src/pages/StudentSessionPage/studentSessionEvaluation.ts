@@ -1,7 +1,6 @@
 import type { PracticeMode } from '../../types/spelling';
 import {
   getStudentNextStepLabel,
-  getStudentStageHeading,
 } from './studentSessionFlow';
 import type { ComparedLetter, FeedbackState, SessionStage } from './studentSession.types';
 
@@ -53,28 +52,41 @@ function getEmptySubmissionMessage(stage: SessionStage, practiceMode: PracticeMo
   return 'Enter your answer before continuing.';
 }
 
-function buildProgressMessage(stage: SessionStage, stageIndex: number, queueLength: number) {
-  return `Word ${Math.min(stageIndex + 1, queueLength)} of ${queueLength} completed in ${getStudentStageHeading(stage)}.`;
+function buildProgressMessage(stageIndex: number, queueLength: number) {
+  return `Word ${Math.min(stageIndex + 1, queueLength)} of ${queueLength} completed.`;
 }
 
 function buildReviewMessage(stage: SessionStage, addedToReview: boolean) {
   if (stage === 'quiz') {
-    return 'The review list stays the same during Quick Quiz.';
+    return 'Words in Review stay the same during Quick Quiz.';
   }
 
   if (addedToReview) {
     return 'Added to Review.';
   }
 
-  return 'Already in Review.';
+  return 'Still in Review.';
 }
 
 function buildNextStepMessage(stage: SessionStage, stageIndex: number, queueLength: number, reviewCount: number) {
   if (stageIndex === queueLength - 1) {
-    return `Move to ${getStudentNextStepLabel(stage, reviewCount)}.`;
+    switch (stage) {
+      case 'learn':
+        return 'Learn complete. Next Step: Student Practice.';
+      case 'practice':
+        return reviewCount > 0
+          ? 'Practice complete. Next Step: Review Missed Words.'
+          : 'Practice complete. Next Step: Quick Quiz.';
+      case 'review':
+        return 'Review complete. Next Step: Quick Quiz.';
+      case 'quiz':
+        return 'Quick Quiz complete. Next Step: Session Summary.';
+      default:
+        return `Next Step: ${getStudentNextStepLabel(stage, reviewCount)}.`;
+    }
   }
 
-  return 'Select Next Word to continue.';
+  return 'Next Step: Select Next Word.';
 }
 
 export function evaluateStudentAnswer({
@@ -120,8 +132,8 @@ export function evaluateStudentAnswer({
         submittedAnswer: normalizedAnswer,
         correctAnswer,
         addedToReview: false,
-        message: `You spelled "${correctAnswer}" correctly.`,
-        progressMessage: buildProgressMessage(stage, stageIndex, queueLength),
+        message: 'The spelling is correct.',
+        progressMessage: buildProgressMessage(stageIndex, queueLength),
         comparison,
         nextStepMessage: buildNextStepMessage(stage, stageIndex, queueLength, reviewWordIds.length),
       },
@@ -145,9 +157,9 @@ export function evaluateStudentAnswer({
         stage === 'quiz'
           ? 'Check the correct spelling before you move to the next quiz word.'
           : practiceMode === 'missing'
-          ? 'Check the missing letters, then try this word again when it appears in review.'
-          : 'Check the correct spelling, then try this word again when it appears in review.',
-      progressMessage: buildProgressMessage(stage, stageIndex, queueLength),
+          ? 'The missing letters are not correct yet.'
+          : 'This spelling is not correct yet.',
+      progressMessage: buildProgressMessage(stageIndex, queueLength),
       comparison,
       nextStepMessage: buildNextStepMessage(stage, stageIndex, queueLength, reviewWordIds.length),
     },

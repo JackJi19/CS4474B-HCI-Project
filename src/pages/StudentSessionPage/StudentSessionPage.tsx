@@ -314,7 +314,7 @@ export function StudentSessionPage() {
       <main>
         <PageShell className="student-practice-page">
           <section aria-labelledby="student-practice-title" className="student-practice__intro">
-            <p className="eyebrow">Guided student flow</p>
+            <p className="eyebrow">Guided spelling practice</p>
             <h1 id="student-practice-title">Student Practice</h1>
             <p className="student-practice__list-name">{activeList.name}</p>
             <p className="student-practice__mode">
@@ -355,7 +355,7 @@ export function StudentSessionPage() {
                 showInput={promptContent.showInput}
                 supportPanel={
                   <>
-                    <p className="student-practice__support-label">Meaning or clue</p>
+                    <p className="student-practice__support-label">Word clue</p>
                     <p className="student-practice__support-copy">{activeWord.prompt}</p>
                     {activeList.settings?.hintSupport ? (
                       <p className="student-practice__hint">Hint: {buildStudentHint(activeWord)}</p>
@@ -394,20 +394,22 @@ export function StudentSessionPage() {
               onRestart={resetSession}
               quickQuizScore={quickQuizScore}
               recommendedNextStep={
-                reviewWordIds.length > 0
-                  ? 'Restart this session to practice the words still in review.'
-                  : 'Return Home or move on to another list.'
+                sessionEndedEarly
+                  ? 'Restart Session to continue Student Practice.'
+                  : reviewWordIds.length > 0
+                  ? 'Restart Session to review missed words.'
+                  : 'Back to Home to start another list.'
               }
               reviewCount={reviewWordIds.length}
               reviewWords={reviewWords.map((word) => word.answer)}
               summaryMessage={
                 sessionEndedEarly
-                  ? 'This session ended before the full practice loop was complete. Restart the session to begin again.'
+                  ? 'Session in progress. This session ended before the full practice loop was complete.'
                   : reviewWordIds.length > 0
-                    ? 'This session is complete. Some words are still in review, so the next step is to practice those words again.'
-                    : 'This session is complete. You mastered the full set, so the next step is to return home or move on to another list.'
+                    ? 'Session complete. Some words are still in review and should be practiced again.'
+                    : 'Session complete. All words were mastered in this session.'
               }
-              title="Session Summary"
+              title={sessionEndedEarly ? 'Session in progress' : 'Practice complete'}
               totalWords={totalWords}
             />
           )}

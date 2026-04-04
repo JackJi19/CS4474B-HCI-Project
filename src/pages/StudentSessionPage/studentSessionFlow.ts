@@ -109,15 +109,15 @@ export function getStudentStageStepLabel(stage: SessionStage) {
 export function getStudentStageDescription(stage: SessionStage) {
   switch (stage) {
     case 'learn':
-      return 'Study each word first. When this stage ends, Student Practice begins.';
+      return 'Study each word first so the spelling is clear before Student Practice begins.';
     case 'practice':
-      return 'Work through one word at a time with immediate feedback. Missed words move into Review Mistakes.';
+      return 'Work through one word at a time with immediate feedback. Missed words are added to review.';
     case 'review':
-      return 'Practice the words that are still in review. When this stage ends, the Quick Quiz begins.';
+      return 'Practice the words that are still in review before you move to the Quick Quiz.';
     case 'quiz':
-      return 'Use this short check to finish the session. When the last word is done, you will see the Session Summary.';
+      return 'Use this short check to finish the session before you open the Session Summary.';
     default:
-      return 'Review what you mastered, what stays in review, and choose the next step.';
+      return 'Review what was mastered, what is still in review, and choose the next step.';
   }
 }
 
@@ -141,7 +141,7 @@ export function getStudentNextStepLabel(stage: SessionStage, reviewCount: number
     case 'learn':
       return 'Student Practice';
     case 'practice':
-      return reviewCount > 0 ? 'Review Mistakes' : 'Quick Quiz';
+      return reviewCount > 0 ? 'Review Missed Words' : 'Quick Quiz';
     case 'review':
       return 'Quick Quiz';
     case 'quiz':
@@ -220,9 +220,19 @@ export function getStudentPrimaryActionLabel({
   }
 
   if (hasSubmittedCurrentWord) {
-    return stageIndex === stageWordCount - 1
-      ? `Go to ${getStudentNextStepLabel(stage, reviewCount)}`
-      : 'Next Word';
+    if (stageIndex === stageWordCount - 1) {
+      if (stage === 'practice' && reviewCount > 0) {
+        return 'Review Missed Words';
+      }
+
+      if (stage === 'quiz') {
+        return 'View Session Summary';
+      }
+
+      return `Begin ${getStudentNextStepLabel(stage, reviewCount)}`;
+    }
+
+    return 'Next Word';
   }
 
   return 'Submit Answer';

@@ -142,13 +142,13 @@ export function TeacherSetupPage() {
     const parsedResult = syncParsedState(rawWordInput);
 
     if (!rawWordInput.trim()) {
-      setValidationError('Enter your spelling list before generating an access code.');
+      setValidationError('Enter your spelling list before generating the student access code.');
       return;
     }
 
     if (parsedResult.parsedWords.length < minimumWordCount) {
       setValidationError(
-        `Add at least ${minimumWordCount} valid words to generate a practice session.`,
+        `Add at least ${minimumWordCount} valid words to generate the student access code.`,
       );
       return;
     }
@@ -184,10 +184,10 @@ export function TeacherSetupPage() {
     : 'Paste or type words above to preview the cleaned list here.';
 
   const actionHelperText = successState
-    ? 'This session is saved locally. Students can now join it from the home page with the code or list name.'
+    ? 'This session is saved locally. Students can now open Student Practice with the access code or list name.'
     : parsedWords.length >= minimumWordCount
-      ? `${pluralize(parsedWords.length, 'word')} ready for students.`
-      : `Add at least ${minimumWordCount} valid words to generate a student access code.`;
+      ? `${pluralize(parsedWords.length, 'word')} ready for Student Practice.`
+      : `Add at least ${minimumWordCount} valid words to generate the student access code.`;
 
   return (
     <>
@@ -195,11 +195,11 @@ export function TeacherSetupPage() {
       <main>
         <PageShell className="teacher-setup-page">
           <section aria-labelledby="teacher-setup-title" className="teacher-setup__intro">
-            <p className="eyebrow">Setup stage</p>
+            <p className="eyebrow">Teacher Setup</p>
             <h1 id="teacher-setup-title">Teacher Setup</h1>
             <p className="teacher-setup__summary">
-              Build a spelling session in one guided pass: enter the list, review the cleaned words,
-              choose lightweight options, and generate a code that students can use right away.
+              Create a spelling session in one guided pass: enter the list, review the cleaned
+              words, choose lightweight options, and generate the student access code.
             </p>
             <Link className="teacher-setup__back-link" to="/">
               Back to Home
@@ -217,7 +217,7 @@ export function TeacherSetupPage() {
               <div className="section-heading teacher-setup__section-heading">
                 <p className="eyebrow">List entry</p>
                 <h2 id="teacher-setup-list-entry-title">Enter your spelling list</h2>
-                <p>Type or paste one word per line. The review area will remove duplicates and blanks.</p>
+                <p>Type or paste one word per line. Blank lines and duplicates are cleaned up in Review List.</p>
               </div>
 
               <div className="teacher-setup__field-grid">
@@ -262,7 +262,7 @@ export function TeacherSetupPage() {
                     value={rawWordInput}
                   />
                   <p className="field-help" id="teacher-word-list-help">
-                    Paste-first is fine. Blank lines are ignored and duplicates are removed in the review area.
+                    Paste-first is fine. Blank lines are ignored and duplicates are removed automatically.
                   </p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export function TeacherSetupPage() {
                 <div className="section-heading teacher-setup__section-heading">
                   <p className="eyebrow">Review</p>
                   <h2 id="teacher-setup-review-title">Review your list</h2>
-                  <p>Large, direct review items keep the current task obvious and reduce clean-up friction.</p>
+                  <p>Check the cleaned list before you generate the student access code.</p>
                 </div>
                 <p aria-live="polite" className="teacher-setup__review-count">
                   {reviewSummary}
@@ -304,7 +304,7 @@ export function TeacherSetupPage() {
               <div className="section-heading teacher-setup__section-heading">
                 <p className="eyebrow">Options</p>
                 <h2>Choose lightweight setup options</h2>
-                <p>Keep the option set small so teachers can finish setup quickly in real classroom conditions.</p>
+                <p>The defaults work well for a quick classroom setup, so these options can stay lightweight.</p>
               </div>
 
               <div className="teacher-setup__options-grid">
@@ -334,7 +334,7 @@ export function TeacherSetupPage() {
             <Card as="section" className="teacher-setup__card teacher-setup__actions">
               <div className="section-heading teacher-setup__section-heading">
                 <p className="eyebrow">Generate</p>
-                <h2>Create the student access code</h2>
+                <h2>Generate the student access code</h2>
                 <p>{actionHelperText}</p>
               </div>
 

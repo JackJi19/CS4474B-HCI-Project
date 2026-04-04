@@ -30,10 +30,10 @@ export function SuccessPanel({
       role="status"
     >
       <div className="section-heading teacher-setup__section-heading">
-        <p className="eyebrow">Session ready</p>
+        <p className="eyebrow">Teacher Setup</p>
         <h2 id="teacher-setup-success-title">Your practice session is ready</h2>
         <p>
-          Share this code or list name with students so they can enter the guided spelling practice flow immediately from the home page.
+          Share this access code or list name so students can open Student Practice from the home page.
         </p>
       </div>
 
@@ -47,11 +47,11 @@ export function SuccessPanel({
 
         <dl className="teacher-setup__success-summary">
           <div>
-            <dt>List</dt>
+            <dt>Session or list name</dt>
             <dd>{sessionName}</dd>
           </div>
           <div>
-            <dt>Words</dt>
+            <dt>Words in list</dt>
             <dd>{wordCount}</dd>
           </div>
           <div>
@@ -59,15 +59,15 @@ export function SuccessPanel({
             <dd>{startingModeLabel}</dd>
           </div>
           <div>
-            <dt>Hints</dt>
-            <dd>{hintSupportEnabled ? 'On' : 'Off'}</dd>
+            <dt>Hint support</dt>
+            <dd>{hintSupportEnabled ? 'Enabled' : 'Off'}</dd>
           </div>
         </dl>
       </div>
 
       <div className="field-group">
         <label className="field-label" htmlFor="teacher-setup-share-link">
-          Share link
+          Share link (mock)
         </label>
         <input
           className="input teacher-setup__share-link"

@@ -33,6 +33,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-xl);
+  align-items: start;
 }
 
 .card.entry-card {
@@ -64,6 +65,7 @@
 .practice-loop__step p {
   margin: 0;
   color: var(--color-ink-muted);
+  line-height: 1.65;
 }
 
 .entry-card__form {

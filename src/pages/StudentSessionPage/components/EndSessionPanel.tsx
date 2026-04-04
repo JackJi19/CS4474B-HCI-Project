@@ -62,7 +62,7 @@ export function EndSessionPanel({
 
       {reviewWords.length > 0 ? (
         <div className="student-practice__review-summary">
-          <p className="student-practice__review-summary-label">Words still in review</p>
+          <p className="student-practice__review-summary-label">Words in Review</p>
           <ul className="student-practice__review-chips">
             {reviewWords.map((word) => (
               <li className="student-practice__review-chip" key={word}>
