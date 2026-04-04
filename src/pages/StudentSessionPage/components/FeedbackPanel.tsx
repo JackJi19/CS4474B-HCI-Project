@@ -1,11 +1,5 @@
 import { Card } from '../../../components/ui/Card';
-
-type FeedbackStatus = 'idle' | 'correct' | 'incorrect';
-
-interface ComparedLetter {
-  value: string;
-  matches: boolean;
-}
+import type { ComparedLetter, FeedbackStatus } from '../studentSession.types';
 
 interface FeedbackPanelProps {
   status: FeedbackStatus;
