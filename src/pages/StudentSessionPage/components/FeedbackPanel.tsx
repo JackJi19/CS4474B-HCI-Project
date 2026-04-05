@@ -1,12 +1,18 @@
 import { Card } from '../../../components/ui/Card';
-import type { ComparedLetter, FeedbackStatus } from '../studentSession.types';
+
+type FeedbackStatus = 'idle' | 'correct' | 'incorrect';
+
+interface ComparedLetter {
+  value: string;
+  matches: boolean;
+}
 
 interface FeedbackPanelProps {
   status: FeedbackStatus;
   submittedAnswer: string;
   correctAnswer: string;
+  addedToReview: boolean;
   message: string;
-  reviewMessage?: string;
   progressMessage: string;
   comparison?: ComparedLetter[];
   nextStepMessage?: string;
@@ -16,8 +22,8 @@ export function FeedbackPanel({
   status,
   submittedAnswer,
   correctAnswer,
+  addedToReview,
   message,
-  reviewMessage,
   progressMessage,
   comparison = [],
   nextStepMessage,
@@ -26,8 +32,7 @@ export function FeedbackPanel({
     return null;
   }
 
-  const statusLabel = status === 'correct' ? 'Correct' : 'Incorrect';
-  const resultText = status === 'correct' ? 'Correct.' : 'Incorrect.';
+  const statusLabel = status === 'correct' ? 'Correct' : 'Not quite yet';
 
   return (
     <Card
@@ -43,9 +48,6 @@ export function FeedbackPanel({
       </div>
 
       <div className="student-practice__feedback-content">
-        <p>
-          <strong>Result:</strong> {resultText}
-        </p>
         <p>{message}</p>
         <p>
           <strong>Your answer:</strong> {submittedAnswer || '—'}
@@ -67,17 +69,15 @@ export function FeedbackPanel({
             <strong>Correct spelling:</strong> {correctAnswer}
           </p>
         ) : null}
-        {status === 'incorrect' && reviewMessage ? (
-          <p>
-            <strong>Review:</strong> {reviewMessage}
-          </p>
-        ) : null}
         <p>
-          <strong>Progress:</strong> {progressMessage}
+          <strong>Review update:</strong> {addedToReview ? 'Added to Review.' : 'No change to Review.'}
+        </p>
+        <p>
+          <strong>Progress update:</strong> {progressMessage}
         </p>
         {nextStepMessage ? (
           <p>
-            <strong>Next Step:</strong> {nextStepMessage}
+            <strong>Next:</strong> {nextStepMessage}
           </p>
         ) : null}
       </div>

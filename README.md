@@ -1,113 +1,73 @@
 # Spelling Practice Studio
 
-## Overview
-Spelling Practice Studio is a university Human-Computer Interaction redesign project. It rethinks a spelling-learning website as a calmer, more guided, and more classroom-friendly experience for both teachers and students.
+## Project Overview
+Spelling Practice Studio is a university Human-Computer Interaction redesign project focused on improving an older spelling-learning website. The goal is to create a cleaner, more learnable, and more feedback-rich classroom-friendly experience for both teachers and students.
 
-This repository contains a front-end prototype built with Vite, React, and TypeScript. The current implementation is organized around a guided spelling-practice flow centered on:
+This repository currently contains a front-end prototype built with Vite, React, and TypeScript. The prototype emphasizes guided spelling practice, low-friction setup, and clear feedback using local mock data only.
 
-- Teacher Setup
-- Student Practice
-- Immediate feedback
-- Review Mistakes
-- Quick Quiz
-- Teacher Summary
+## Why We Are Redesigning the Original Experience
+The redesign is motivated by the need to improve the usability and learnability of a legacy spelling website experience. The older experience can be difficult for new users to understand quickly, especially in classroom settings where time, clarity, and task flow matter.
 
-The prototype is intentionally lightweight. It focuses on interaction design, clarity, and learnability rather than backend systems or production deployment.
+This redesign aims to:
 
-## Problem With the Original Experience
-The original spelling experience was more fragmented and harder to interpret quickly. In classroom use, that creates several usability problems:
+- make student and teacher entry points clearer
+- reduce unnecessary complexity in core tasks
+- provide more immediate and interpretable feedback
+- support guided practice instead of loosely structured activity flow
+- create a calmer, more consistent interface that is easier to understand at a glance
 
-- teacher and student entry points are not as clear as they could be
-- the next step in the learning flow is not always obvious
-- feedback can feel disconnected from progress and review
-- review and follow-up are harder to scan at a glance
-- the interface places more cognitive load on first-time users
+## Main HCI Goals
+The project is guided by core HCI principles, including:
 
-This redesign aims to replace that fragmented experience with a more guided interaction flow that is easier to learn, easier to scan, and easier to explain in a classroom setting.
+- **Visibility:** keep system status, progress, and next steps easy to see
+- **Feedback:** provide immediate, readable responses to user actions
+- **Consistency:** reuse layout, terminology, controls, and interaction patterns across pages
+- **Cognitive load reduction:** simplify choices and keep attention on one main task at a time
+- **Learnability:** help first-time users understand what to do without guesswork
+- **Classroom fit:** support quick setup and smooth student practice in a school context
 
-## Redesign Goals
-- Make teacher and student entry points easy to identify.
-- Support one clear action at a time during setup and practice.
-- Keep progress, review state, and next steps visible throughout the flow.
-- Provide immediate, readable feedback after student responses.
-- Reduce clutter and keep the experience classroom-friendly.
-- Preserve a lightweight prototype scope without backend complexity.
+## Implemented Features
+The following features are currently implemented:
 
-## HCI Principles Used in the Redesign
-- **Visibility:** session progress, review state, and next steps are surfaced clearly.
-- **Feedback:** student answers receive immediate, interpretable responses.
-- **Consistency:** shared terminology, controls, layout patterns, and hierarchy are reused across pages.
-- **Cognitive load reduction:** the interface emphasizes the current task instead of many competing controls.
-- **Learnability:** the flow is structured so a new user can understand what to do without guesswork.
-- **Guided interaction flow:** the product reinforces a clear sequence of setup, practice, review, quiz, and summary.
+- **Homepage**
+  - clear separation between Student Practice and Teacher Setup
+  - student entry by access code or list name
+  - teacher entry to create a practice list
+  - visible guided practice loop: Learn -> Practice -> Review Mistakes -> Quick Quiz
+- **Shared UI and Layout Foundation**
+  - reusable header, page shell, button, card, and input components
+  - shared design tokens and global styling
+  - React Router route structure for key pages
+- **Teacher Setup Page**
+  - paste or type one word per line
+  - automatic parsing, trimming, and duplicate removal
+  - review list with per-word removal
+  - lightweight practice options
+  - mock access code generation with success state
+  - local list persistence so student entry works with generated codes
+  - teacher summary view for recent completed sessions
+- **Student Practice Page**
+  - Learn -> Practice -> Review Mistakes -> Quick Quiz -> Summary
+  - practice modes: Type the Word, Missing Letters, and Scramble
+  - one-word-at-a-time guided practice flow
+  - visible stage and progress indicators
+  - immediate correct/incorrect feedback with letter-level comparison
+  - review tracking for missed words
+  - hint support when enabled by the teacher
+  - end-of-session summary with quick quiz score
+- **Mock Front-End Only Flow**
+  - local mock list/session data
+  - no backend, authentication, analytics, or database integration
 
-## Screenshots
+## Planned Next Features
+The following features are planned for later phases:
 
-### Homepage
-![Homepage Screenshot](docs/images/homepage.png)
+- empirical usability testing with classroom participants
+- richer teacher analytics beyond the lightweight summary view
+- additional accessibility and personalization options
+- iterative usability refinement based on HCI evaluation findings
 
-![Homepage Screenshot 2](docs/images/homepage_2.png)
-
-
-### Teacher Setup
-![Teacher Setup Screenshot](docs/images/teacher-setup.png)
-
-![Teacher Setup Screenshot 2](docs/images/teacher-setup_2.png)
-
-### Student Practice
-![Student Practice Screenshot](docs/images/student-practice.png)
-
-![Student Practice Screenshot 2](docs/images/student-practice_2.png)
-
-![Student Practice Screenshot 3](docs/images/student-practice_3.png)
-
-## Current Implemented Features
-
-### Homepage
-- Clear separation between `Student Practice` and `Teacher Setup`
-- Student entry using an access code or list name
-- Teacher entry for creating a classroom practice list
-- Visible guided loop: `Learn -> Student Practice -> Review Mistakes -> Quick Quiz`
-
-### Teacher Setup
-- Session/list naming and optional teacher name
-- Paste-first spelling list entry
-- Automatic trimming, duplicate removal, and blank-line cleanup
-- Review List with per-word removal
-- Lightweight setup options for starting mode and hint support
-- Local mock access-code generation
-- Success state with session summary and mock share link
-
-### Student Practice Flow
-- Guided multi-stage flow:
-  - Learn
-  - Student Practice
-  - Review Mistakes
-  - Quick Quiz
-  - Session Summary
-- One-word-at-a-time practice with visible Session Progress
-- Immediate correct / incorrect feedback
-- Review-state updates for missed words
-- Summary state with mastered count, words in review, and next-step guidance
-
-### Review / Quiz / Summary
-- Review stage for missed words
-- Quick Quiz stage after practice and review
-- Session Summary state with completion messaging and recommended next steps
-
-### Teacher Summary
-- Lightweight teacher-facing summary of completed sessions
-- Session outcome messaging
-- Counts for:
-  - Words Practiced
-  - Mastered Words
-  - Words in Review
-- Ranked `Most Missed Words` section
-
-### Final Consistency and HCI Polish Pass
-- Standardized terminology across homepage, teacher setup, student practice, summary, and teacher summary
-- Clearer stage headings and next-step wording
-- Stronger visual hierarchy cues without changing the architecture
+These items are not fully implemented yet and should be treated as next-phase work.
 
 ## Tech Stack
 - Vite
@@ -115,10 +75,9 @@ This redesign aims to replace that fragmented experience with a more guided inte
 - TypeScript
 - React Router
 - CSS
-- Browser `localStorage` for prototype-only persistence
+- local mock data for prototype behavior
 
 ## Project Structure Overview
-
 ```text
 src/
 ├── app/
@@ -143,30 +102,32 @@ src/
 │   └── tokens.css
 ├── types/
 │   └── spelling.ts
-├── utils/
-│   ├── listParsing.ts
-│   ├── practiceStorage.ts
-│   └── validation.ts
-└── main.tsx
+└── utils/
+    ├── listParsing.ts
+    └── validation.ts
 ```
 
-## Local Setup
+## Local Setup Instructions
 ### Prerequisites
 - Node.js 18+ recommended
 - npm
 
-### Install
+### Setup
+1. Clone the repository.
+2. Move into the project directory.
+3. Install dependencies:
+
 ```bash
 npm install
 ```
 
-## Run and Build
+## Build and Run Commands
 ### Start the development server
 ```bash
 npm run dev
 ```
 
-### Create a production build
+### Build the project
 ```bash
 npm run build
 ```
@@ -176,29 +137,13 @@ npm run build
 npm run preview
 ```
 
-## Implemented vs Future Work
+## Team / Project Note
+This repository is part of a university HCI redesign project. It is currently a front-end prototype intended to support iterative design, implementation, and evaluation rather than production deployment.
 
-### Implemented in this prototype
-- Homepage and routing foundation
-- Teacher Setup flow
-- Student Practice flow with review, quiz, and summary
-- Teacher Summary view
-- Shared UI/layout system and final consistency polish
+The current codebase should be treated as a structured prototype:
 
-### Possible future work
-- Stronger persistence beyond the current browser
-- Additional teacher-facing summary detail
-- User testing-driven refinements to wording and interaction flow
-- Expansion of the prototype into a fuller classroom deployment model
+- built to explore interaction design and classroom-friendly workflows
+- intentionally limited to local state and mock data
+- designed to be extended in later phases without introducing unnecessary backend complexity too early
 
-## Project Scope and Prototype Limitations
-This repository is a front-end HCI prototype, not a production system. It intentionally does **not** include:
-
-- authentication
-- a backend API
-- a database
-- live multi-user synchronization
-- analytics dashboards
-- grading or roster-management features
-
-All current list/session behavior is prototype-level and browser-local. The goal of this implementation is to demonstrate and evaluate the redesigned interaction flow, not to provide a complete deployed platform.
+Future changes should continue to prioritize visibility, feedback, consistency, cognitive load reduction, and learnability.

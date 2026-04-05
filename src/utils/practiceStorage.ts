@@ -21,8 +21,8 @@ function slugify(value: string) {
     .slice(0, 50);
 }
 
-function buildPromptFromWord(word: string) {
-  return `Study word from the spelling list (${word.length} letters).`;
+function buildPromptFromWord() {
+  return 'Teacher-selected spelling word.';
 }
 
 function enrichList(list: SpellingList): SpellingList {
@@ -80,7 +80,7 @@ export function saveCustomList(input: {
   const trimmedName = input.sessionName.trim() || 'Untitled list';
   const practiceWords: PracticeWord[] = input.words.map((word, index) => ({
     id: `${slugify(trimmedName)}-${index + 1}`,
-    prompt: buildPromptFromWord(word),
+    prompt: buildPromptFromWord(),
     answer: word,
   }));
 
