@@ -47,14 +47,22 @@ The following features are currently implemented:
   - local list persistence so student entry works with generated codes
   - teacher summary view for recent completed sessions
 - **Student Practice Page**
-  - Learn -> Practice -> Review Mistakes -> Quick Quiz -> Summary
-  - practice modes: Type the Word, Missing Letters, and Scramble
-  - one-word-at-a-time guided practice flow
-  - visible stage and progress indicators
-  - immediate correct/incorrect feedback with letter-level comparison
+  - guided practice flow with Learn -> Practice -> Review Mistakes -> Quick Quiz
+  - practice modes:
+    - Type the Word
+    - Missing Letters
+    - Scramble
+  - mixed practice rotates among supported practice activities
+  - for words without a meaningful prompt, mixed practice avoids ambiguous clue-based typing tasks
+  - one-word-at-a-time practice flow
+  - visible session progress and stage guidance
+  - immediate correct/incorrect feedback
+  - letter-level incorrect feedback for typed responses
+  - optional hints when enabled by the teacher
   - review tracking for missed words
-  - hint support when enabled by the teacher
-  - end-of-session summary with quick quiz score
+  - Review Missed Words experience after practice
+  - Quick Quiz flow after practice and review
+  - Session summary and follow-up screens
 - **Mock Front-End Only Flow**
   - local mock list/session data
   - no backend, authentication, analytics, or database integration
