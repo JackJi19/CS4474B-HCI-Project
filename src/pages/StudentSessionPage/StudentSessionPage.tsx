@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import type { PracticeMode, PracticeWord, SessionSummaryRecord, SpellingList } from '../../types/spelling';
 import { getAllLists, saveSessionSummary } from '../../utils/practiceStorage';
+import { hasMeaningfulPrompt, isDuplicatePromptText, resolvePrimaryPrompt } from '../../utils/spellingPrompts';
 import { EndSessionPanel } from './components/EndSessionPanel';
 import { FeedbackPanel } from './components/FeedbackPanel';
 import { PracticeCard } from './components/PracticeCard';
@@ -92,8 +93,8 @@ function compareLetters(submittedAnswer: string, correctAnswer: string) {
   });
 }
 
-function hasMeaningfulPrompt(word: PracticeWord) {
-  return word.prompt.trim().toLowerCase() !== 'teacher-selected spelling word.';
+function normalizeSpellingValue(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function getModeForStage(stage: Stage, index: number, word: PracticeWord): PracticeMode {
@@ -110,23 +111,15 @@ function getModeForStage(stage: Stage, index: number, word: PracticeWord): Pract
   return 'type';
 }
 
-function buildSupportPanelContent(word: PracticeWord, mode: PracticeMode, hintSupport: boolean) {
-  const meaningfulPrompt = hasMeaningfulPrompt(word);
-  const supportLabel = meaningfulPrompt ? 'Meaning or clue' : 'Practice support';
-
-  let supportCopy = meaningfulPrompt
-    ? word.prompt
-    : 'Use the visible letter pattern to reconstruct the teacher-selected spelling word.';
-
-  if (mode === 'scramble' && !meaningfulPrompt) {
-    supportCopy = 'Use the scrambled letters to reconstruct the teacher-selected spelling word.';
+function getModeLabel(mode: PracticeMode) {
+  switch (mode) {
+    case 'missing':
+      return 'Missing Letters';
+    case 'scramble':
+      return 'Unscramble';
+    default:
+      return 'Type the Word';
   }
-
-  return {
-    supportLabel,
-    supportCopy,
-    hintText: hintSupport ? `Hint: ${buildHint(word)}` : '',
-  };
 }
 
 function getStageLabel(stage: Stage) {
@@ -134,47 +127,64 @@ function getStageLabel(stage: Stage) {
     case 'learn':
       return 'Learn';
     case 'practice':
-      return 'Practice';
+      return 'Student Practice';
     case 'review':
       return 'Review Mistakes';
     case 'quiz':
       return 'Quick Quiz';
     default:
-      return 'Summary';
+      return 'Session Summary';
   }
 }
 
 function getStageDescription(stage: Stage) {
   switch (stage) {
     case 'learn':
-      return 'Preview each word before the main practice loop begins.';
+      return 'Preview each word before Student Practice begins.';
     case 'practice':
-      return 'Work through one focused interaction at a time with immediate feedback.';
+      return 'Work through one word at a time with immediate feedback and visible progress.';
     case 'review':
-      return 'Revisit the words that still need attention.';
+      return 'Practice the words that are still in review before the Quick Quiz begins.';
     case 'quiz':
-      return 'Finish with a short recall check after practice and review.';
+      return 'Finish with a short recall check before you open the Session Summary.';
     default:
-      return 'Use the summary to decide whether to restart or finish.';
+      return 'Review what was mastered, what is still in review, and choose the next step.';
   }
 }
 
 function getNextStepLabel(stage: Stage, reviewCount: number) {
   switch (stage) {
     case 'learn':
-      return 'Practice';
+      return 'Student Practice';
     case 'practice':
-      return reviewCount > 0 ? 'Review Mistakes' : 'Quick Quiz';
+      return reviewCount > 0 ? 'Review Missed Words' : 'Quick Quiz';
     case 'review':
       return 'Quick Quiz';
     case 'quiz':
-      return 'Summary';
+      return 'Session Summary';
     default:
       return 'Back to Home';
   }
 }
 
+function getStageCompletionMessage(stage: Stage, reviewCount: number) {
+  switch (stage) {
+    case 'practice':
+      return reviewCount > 0
+        ? 'Student Practice complete. Next: Review Missed Words.'
+        : 'Student Practice complete. Next: Quick Quiz.';
+    case 'review':
+      return 'Review complete. Next: Quick Quiz.';
+    case 'quiz':
+      return 'Quick Quiz complete. Next: Session Summary.';
+    default:
+      return `Next: ${getNextStepLabel(stage, reviewCount)}.`;
+  }
+}
+
 function getPromptContent(stage: Stage, mode: PracticeMode, word: PracticeWord) {
+  const primaryPrompt = resolvePrimaryPrompt(word);
+
   if (stage === 'learn') {
     return {
       promptLabel: 'Study word',
@@ -184,7 +194,8 @@ function getPromptContent(stage: Stage, mode: PracticeMode, word: PracticeWord) 
       inputPlaceholder: '',
       inputHelpText: '',
       expectedAnswer: word.answer,
-      supportPanel: word.prompt,
+      supportLabel: hasMeaningfulPrompt(word) ? 'Meaning or clue' : '',
+      supportPanel: hasMeaningfulPrompt(word) ? primaryPrompt : null,
       showInput: false,
     };
   }
@@ -192,40 +203,43 @@ function getPromptContent(stage: Stage, mode: PracticeMode, word: PracticeWord) 
   if (mode === 'missing') {
     const missing = buildMissingPattern(word.answer);
     return {
-      promptLabel: 'Complete the pattern',
-      prompt: missing.pattern,
+      promptLabel: 'Prompt',
+      prompt: primaryPrompt,
       instruction: 'Enter only the missing letters in order.',
       inputLabel: 'Missing letters',
       inputPlaceholder: 'Type the missing letters',
       inputHelpText: 'Use the visible pattern to reconstruct the word.',
       expectedAnswer: missing.expectedMissingLetters,
-      supportPanel: word.prompt,
+      supportLabel: 'Letter pattern',
+      supportPanel: missing.pattern,
       showInput: true,
     };
   }
 
   if (mode === 'scramble') {
     return {
-      promptLabel: 'Unscramble the letters',
-      prompt: shuffleWord(word.answer),
+      promptLabel: 'Prompt',
+      prompt: primaryPrompt,
       instruction: 'Unscramble the letters and type the full word.',
       inputLabel: 'Unscrambled word',
       inputPlaceholder: 'Type the full word',
       inputHelpText: 'Use the letter order clue and the prompt to reconstruct the spelling.',
       expectedAnswer: word.answer,
-      supportPanel: word.prompt,
+      supportLabel: 'Scrambled letters',
+      supportPanel: shuffleWord(word.answer),
       showInput: true,
     };
   }
 
   return {
     promptLabel: 'Prompt',
-    prompt: word.prompt,
+    prompt: primaryPrompt,
     instruction: 'Spell the word that matches the prompt.',
     inputLabel: 'Your answer',
     inputPlaceholder: 'Type your spelling here',
     inputHelpText: 'Capital letters do not matter in this phase.',
     expectedAnswer: word.answer,
+    supportLabel: '',
     supportPanel: null as string | null,
     showInput: true,
   };
@@ -250,6 +264,7 @@ export function StudentSessionPage() {
   const [currentFeedbackState, setCurrentFeedbackState] = useState<FeedbackState>(idleFeedbackState);
   const [masteredWordIds, setMasteredWordIds] = useState<string[]>([]);
   const [reviewWordIds, setReviewWordIds] = useState<string[]>([]);
+  const [resolvedReviewWordIds, setResolvedReviewWordIds] = useState<string[]>([]);
   const [missCounts, setMissCounts] = useState<Record<string, number>>({});
   const [quizCorrectCount, setQuizCorrectCount] = useState(0);
   const [sessionEndedEarly, setSessionEndedEarly] = useState(false);
@@ -266,6 +281,16 @@ export function StudentSessionPage() {
 
     return activeList.practiceWords.filter((word) => reviewWordIds.includes(word.id));
   }, [activeList, reviewWordIds]);
+
+  const unresolvedReviewWords = useMemo(() => {
+    if (!activeList) {
+      return [];
+    }
+
+    return activeList.practiceWords.filter(
+      (word) => reviewWordIds.includes(word.id) && !resolvedReviewWordIds.includes(word.id),
+    );
+  }, [activeList, resolvedReviewWordIds, reviewWordIds]);
 
   const currentQueue = useMemo(() => {
     if (!activeList) {
@@ -305,6 +330,7 @@ export function StudentSessionPage() {
     setCurrentFeedbackState(idleFeedbackState);
     setMasteredWordIds([]);
     setReviewWordIds([]);
+    setResolvedReviewWordIds([]);
     setMissCounts({});
     setQuizCorrectCount(0);
     setSessionEndedEarly(false);
@@ -330,14 +356,24 @@ export function StudentSessionPage() {
       completedAt: new Date().toISOString(),
       totalWords,
       masteredCount: masteredWordIds.length,
-      reviewCount: reviewWordIds.length,
+      reviewCount: unresolvedReviewWords.length,
       quickQuizScore,
       mostMissedWords: sortedMisses,
     };
 
     saveSessionSummary(summary);
     setHasSavedSummary(true);
-  }, [activeList, hasSavedSummary, masteredWordIds.length, missCounts, quickQuizScore, reviewWordIds.length, sessionEndedEarly, stage, totalWords]);
+  }, [
+    activeList,
+    hasSavedSummary,
+    masteredWordIds.length,
+    missCounts,
+    quickQuizScore,
+    sessionEndedEarly,
+    stage,
+    totalWords,
+    unresolvedReviewWords.length,
+  ]);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (hasSubmittedCurrentWord || stage === 'learn' || stage === 'summary') {
@@ -403,19 +439,30 @@ export function StudentSessionPage() {
     }
 
     const promptContent = getPromptContent(stage, currentMode, currentWord);
-    const normalizedAnswer = currentInputValue.trim();
+    const submittedAnswer = currentInputValue.trim();
 
-    if (!normalizedAnswer) {
+    if (!submittedAnswer) {
       setCurrentInputError(stage === 'practice' && currentMode === 'missing' ? 'Enter the missing letters before continuing.' : 'Enter your answer before continuing.');
       return;
     }
 
-    const isCorrect = normalizedAnswer.toLowerCase() === promptContent.expectedAnswer.toLowerCase();
+    const normalizedSubmittedAnswer = normalizeSpellingValue(submittedAnswer);
+    const normalizedExpectedAnswer = normalizeSpellingValue(promptContent.expectedAnswer);
+    const normalizedCorrectWord = normalizeSpellingValue(currentWord.answer);
+    const matchesExpectedAnswer = normalizedSubmittedAnswer === normalizedExpectedAnswer;
+    const matchesCorrectWord = normalizedSubmittedAnswer === normalizedCorrectWord;
+    const isCorrect = matchesExpectedAnswer || matchesCorrectWord;
+    const comparisonTarget = matchesCorrectWord ? currentWord.answer : promptContent.expectedAnswer;
     const alreadyInReview = reviewWordIds.includes(currentWord.id);
+    const alreadyResolved = resolvedReviewWordIds.includes(currentWord.id);
 
     setHasSubmittedCurrentWord(true);
 
     if (isCorrect) {
+      if (stage === 'review' && alreadyInReview && !alreadyResolved) {
+        setResolvedReviewWordIds((currentValue) => [...currentValue, currentWord.id]);
+      }
+
       if (stage !== 'quiz' && !masteredWordIds.includes(currentWord.id)) {
         setMasteredWordIds((currentValue) => [...currentValue, currentWord.id]);
       }
@@ -426,13 +473,13 @@ export function StudentSessionPage() {
 
       setCurrentFeedbackState({
         status: 'correct',
-        submittedAnswer: normalizedAnswer,
+        submittedAnswer,
         correctAnswer: currentWord.answer,
         addedToReview: false,
         message: `Good work. "${currentWord.answer}" is correct.`,
         progressMessage: `You have completed ${Math.min(stageIndex + 1, currentQueue.length)} of ${currentQueue.length} words in ${getStageLabel(stage)}.`,
-        comparison: compareLetters(currentMode === 'missing' ? promptContent.expectedAnswer : normalizedAnswer, promptContent.expectedAnswer),
-        nextStepMessage: stageIndex === currentQueue.length - 1 ? `Move to ${getNextStepLabel(stage, reviewWordIds.length)}.` : 'Continue to the next word.',
+        comparison: compareLetters(submittedAnswer, comparisonTarget),
+        nextStepMessage: stageIndex === currentQueue.length - 1 ? getStageCompletionMessage(stage, reviewWordIds.length) : 'Next: Continue to the next word.',
       });
       return;
     }
@@ -450,15 +497,19 @@ export function StudentSessionPage() {
 
     setCurrentFeedbackState({
       status: 'incorrect',
-      submittedAnswer: normalizedAnswer,
+      submittedAnswer,
       correctAnswer: currentWord.answer,
       addedToReview: stage !== 'quiz' && !alreadyInReview,
       message: currentMode === 'missing'
         ? `Those letters do not complete the word correctly yet.`
-        : `"${normalizedAnswer}" is not the correct spelling for this prompt.`,
+        : `"${submittedAnswer}" is not the correct spelling for this prompt.`,
       progressMessage: `You have completed ${Math.min(stageIndex + 1, currentQueue.length)} of ${currentQueue.length} words in ${getStageLabel(stage)}.`,
-      comparison: compareLetters(currentMode === 'missing' ? normalizedAnswer : normalizedAnswer, promptContent.expectedAnswer),
-      nextStepMessage: stage === 'quiz' ? 'Finish the quiz, then review the summary.' : 'Continue and this word will remain visible in Review Mistakes.',
+      comparison: compareLetters(submittedAnswer, promptContent.expectedAnswer),
+      nextStepMessage: stageIndex === currentQueue.length - 1
+        ? getStageCompletionMessage(stage, reviewWordIds.length)
+        : stage === 'quiz'
+          ? 'Next: Continue to the next quiz word.'
+          : 'Next: Continue to the next word. This word stays in Review Mistakes.',
     });
   };
 
@@ -517,10 +568,16 @@ export function StudentSessionPage() {
   }
 
   const promptContent = currentWord ? getPromptContent(stage, currentMode, currentWord) : null;
-  const supportPanelContent = currentWord ? buildSupportPanelContent(currentWord, currentMode, Boolean(activeList.settings?.hintSupport)) : null;
+  const hintText =
+    currentWord && activeList.settings?.hintSupport ? `Hint: ${buildHint(currentWord)}` : '';
+  const showSupportCopy = Boolean(
+    promptContent?.supportPanel &&
+      !isDuplicatePromptText(promptContent.prompt, promptContent.supportPanel),
+  );
+  const showSupportPanel = showSupportCopy || Boolean(hintText);
   const primaryActionLabel = stage === 'learn'
     ? stageIndex === currentQueue.length - 1
-      ? 'Begin Practice'
+      ? 'Begin Student Practice'
       : 'Next Study Word'
     : hasSubmittedCurrentWord
       ? stageIndex === currentQueue.length - 1
@@ -528,11 +585,15 @@ export function StudentSessionPage() {
         : 'Next Word'
       : 'Submit Answer';
 
-  const stageEyebrow = stage === 'learn' ? 'Learn stage' : stage === 'practice' ? `${getStageLabel(stage)} - ${currentMode}` : getStageLabel(stage);
+  const stageEyebrow = stage === 'learn'
+    ? 'Learn'
+    : stage === 'practice'
+      ? `${getStageLabel(stage)} - ${getModeLabel(currentMode)}`
+      : getStageLabel(stage);
   const title = stage === 'learn'
     ? 'Study the word before you practice'
     : stage === 'review'
-      ? 'Review a missed word'
+      ? 'Review this word again'
       : stage === 'quiz'
         ? 'Quick Quiz'
         : currentMode === 'missing'
@@ -547,10 +608,13 @@ export function StudentSessionPage() {
       <main>
         <PageShell className="student-practice-page">
           <section aria-labelledby="student-practice-title" className="student-practice__intro">
-            <p className="eyebrow">Guided student flow</p>
+            <p className="eyebrow">Student Practice</p>
             <h1 id="student-practice-title">Student Practice</h1>
             <p className="student-practice__list-name">{activeList.name}</p>
-            <p className="student-practice__mode">{getStageLabel(stage)}{stage === 'practice' ? ` - ${currentMode}` : ''}</p>
+            <p className="student-practice__mode">
+              {getStageLabel(stage)}
+              {stage === 'practice' ? ` - ${getModeLabel(currentMode)}` : ''}
+            </p>
           </section>
 
           <ProgressSummary
@@ -583,12 +647,18 @@ export function StudentSessionPage() {
                 prompt={promptContent.prompt}
                 promptLabel={promptContent.promptLabel}
                 showInput={promptContent.showInput}
-                supportPanel={supportPanelContent ? (
+                supportPanel={showSupportPanel ? (
                   <>
-                    <p className="student-practice__support-label">{supportPanelContent.supportLabel}</p>
-                    <p className="student-practice__support-copy">{supportPanelContent.supportCopy}</p>
-                    {supportPanelContent.hintText ? (
-                      <p className="student-practice__hint">{supportPanelContent.hintText}</p>
+                    {showSupportCopy ? (
+                      <>
+                        <p className="student-practice__support-label">
+                          {promptContent.supportLabel || 'Meaning or clue'}
+                        </p>
+                        <p className="student-practice__support-copy">{promptContent.supportPanel}</p>
+                      </>
+                    ) : null}
+                    {hintText ? (
+                      <p className="student-practice__hint">{hintText}</p>
                     ) : null}
                   </>
                 ) : null}
@@ -623,11 +693,11 @@ export function StudentSessionPage() {
               masteredCount={masteredWordIds.length}
               onRestart={resetSession}
               quickQuizScore={quickQuizScore}
-              recommendedNextStep={reviewWordIds.length > 0 ? 'Restart the session and focus on the review words.' : 'Return to Home or create another list.'}
-              reviewCount={reviewWordIds.length}
-              reviewWords={reviewWords.map((word) => word.answer)}
-              summaryMessage={sessionEndedEarly ? 'The session was ended before all stages were completed.' : 'The full guided loop is complete. Use the summary below to decide what to do next.'}
-              title={sessionEndedEarly ? 'Session ended early' : 'Practice complete'}
+              recommendedNextStep={unresolvedReviewWords.length > 0 ? 'Review Missed Words by restarting this session.' : 'Back to Home to start another list.'}
+              reviewCount={unresolvedReviewWords.length}
+              reviewWords={unresolvedReviewWords.map((word) => word.answer)}
+              summaryMessage={sessionEndedEarly ? 'Session in progress. This session ended before the full guided loop was complete.' : 'Quick Quiz complete. Your Session Summary is ready below.'}
+              title={sessionEndedEarly ? 'Session in progress' : 'Quick Quiz complete'}
               totalWords={totalWords}
             />
           )}

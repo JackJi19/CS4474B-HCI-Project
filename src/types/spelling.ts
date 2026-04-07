@@ -10,6 +10,7 @@ export interface PracticeWord {
   id: string;
   prompt: string;
   answer: string;
+  teacherClue?: string;
 }
 
 export interface SpellingList {

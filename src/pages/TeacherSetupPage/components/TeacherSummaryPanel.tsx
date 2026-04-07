@@ -9,43 +9,56 @@ export function TeacherSummaryPanel({ sessions }: TeacherSummaryPanelProps) {
   return (
     <Card as="section" className="teacher-setup__card">
       <div className="section-heading teacher-setup__section-heading">
-        <p className="eyebrow">Teacher summary</p>
-        <h2>Recent practice results</h2>
+        <p className="eyebrow">Teacher Summary</p>
+        <h2>Teacher Summary</h2>
         <p>
-          This lightweight summary supports quick classroom review by surfacing recent completion,
-          review load, and quiz performance.
+          Review recent classroom sessions at a glance. Each result keeps the session outcome,
+          mastered words, words in review, and most missed words easy to scan.
         </p>
       </div>
 
       {sessions.length === 0 ? (
         <div className="teacher-setup__empty-state">
-          <p>No student sessions have been completed on this browser yet.</p>
+          <p>No session summaries are available on this browser yet.</p>
         </div>
       ) : (
         <div className="teacher-setup__summary-table-wrap">
           <table className="teacher-setup__summary-table">
             <thead>
               <tr>
-                <th>List</th>
-                <th>Completed</th>
+                <th>Session Results</th>
+                <th>Session Outcome</th>
                 <th>Mastered</th>
-                <th>Review</th>
-                <th>Quiz</th>
-                <th>Most missed</th>
+                <th>In Review</th>
+                <th>Quick Quiz</th>
+                <th>Most Missed Words</th>
               </tr>
             </thead>
             <tbody>
               {sessions.map((session) => (
                 <tr key={session.id}>
                   <td>
-                    <strong>{session.listName}</strong>
-                    <div className="teacher-setup__summary-subtext">{session.accessCode}</div>
+                    <strong>Session results for {session.listName}</strong>
+                    <div className="teacher-setup__summary-subtext">Access code: {session.accessCode}</div>
                   </td>
-                  <td>{new Date(session.completedAt).toLocaleString()}</td>
+                  <td>
+                    <strong>Session complete</strong>
+                    <div className="teacher-setup__summary-subtext">
+                      Completed on {new Date(session.completedAt).toLocaleString()}
+                    </div>
+                  </td>
                   <td>{session.masteredCount} / {session.totalWords}</td>
                   <td>{session.reviewCount}</td>
                   <td>{session.quickQuizScore}%</td>
-                  <td>{session.mostMissedWords.length ? session.mostMissedWords.join(', ') : '—'}</td>
+                  <td>
+                    {session.mostMissedWords.length ? (
+                      session.mostMissedWords.join(', ')
+                    ) : (
+                      <span className="teacher-setup__summary-empty">
+                        Great job — no words were missed in this session.
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

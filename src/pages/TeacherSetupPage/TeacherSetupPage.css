@@ -163,9 +163,7 @@
 }
 
 .teacher-setup__parsed-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: var(--space-md);
   padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--color-border-soft);
@@ -173,8 +171,19 @@
   background: rgba(255, 255, 255, 0.78);
 }
 
+.teacher-setup__parsed-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
 .teacher-setup__parsed-word {
   font-weight: 700;
+}
+
+.teacher-setup__clue-field {
+  margin: 0;
 }
 
 .teacher-setup__remove-word {
@@ -298,7 +307,7 @@
   }
 
   .teacher-setup__review-header,
-  .teacher-setup__parsed-item,
+  .teacher-setup__parsed-item-header,
   .teacher-setup__success-actions {
     flex-direction: column;
     align-items: flex-start;
@@ -343,4 +352,8 @@
   color: var(--color-ink-muted);
   font-size: 0.9rem;
   margin-top: 0.15rem;
+}
+
+.teacher-setup__summary-empty {
+  color: var(--color-ink-muted);
 }

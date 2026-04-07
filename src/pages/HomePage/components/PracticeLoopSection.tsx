@@ -1,4 +1,4 @@
-const steps = ['Learn', 'Practice', 'Review Mistakes', 'Quick Quiz'];
+const steps = ['Learn', 'Student Practice', 'Review Mistakes', 'Quick Quiz'];
 
 export function PracticeLoopSection() {
   return (

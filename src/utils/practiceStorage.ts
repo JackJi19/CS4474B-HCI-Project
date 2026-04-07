@@ -1,5 +1,6 @@
 import { mockLists } from '../data/mockLists';
 import type { PracticeSettings, PracticeWord, SessionSummaryRecord, SpellingList } from '../types/spelling';
+import { buildGeneratedPrompt } from './spellingPrompts';
 
 const LISTS_STORAGE_KEY = 'spelling-practice-studio/custom-lists';
 const SESSIONS_STORAGE_KEY = 'spelling-practice-studio/session-summaries';
@@ -22,7 +23,7 @@ function slugify(value: string) {
 }
 
 function buildPromptFromWord() {
-  return 'Teacher-selected spelling word.';
+  return buildGeneratedPrompt();
 }
 
 function enrichList(list: SpellingList): SpellingList {
@@ -75,6 +76,7 @@ export function saveCustomList(input: {
   teacherName?: string;
   accessCode: string;
   words: string[];
+  teacherClues?: Record<string, string>;
   settings: PracticeSettings;
 }): SpellingList {
   const trimmedName = input.sessionName.trim() || 'Untitled list';
@@ -82,6 +84,7 @@ export function saveCustomList(input: {
     id: `${slugify(trimmedName)}-${index + 1}`,
     prompt: buildPromptFromWord(),
     answer: word,
+    teacherClue: input.teacherClues?.[word.trim().toLowerCase()]?.trim() || undefined,
   }));
 
   const nextList: SpellingList = enrichList({

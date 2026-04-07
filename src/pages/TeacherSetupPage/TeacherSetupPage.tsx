@@ -42,12 +42,25 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
 
+function getWordKey(word: string) {
+  return word.trim().toLowerCase();
+}
+
+function filterTeacherClues(words: string[], teacherClues: Record<string, string>) {
+  const allowedWordKeys = new Set(words.map((word) => getWordKey(word)));
+
+  return Object.fromEntries(
+    Object.entries(teacherClues).filter(([wordKey]) => allowedWordKeys.has(wordKey)),
+  );
+}
+
 export function TeacherSetupPage() {
   const generationLockedRef = useRef(false);
   const [sessionName, setSessionName] = useState('');
   const [teacherName, setTeacherName] = useState('');
   const [rawWordInput, setRawWordInput] = useState('');
   const [parsedWords, setParsedWords] = useState<string[]>([]);
+  const [teacherClues, setTeacherClues] = useState<Record<string, string>>({});
   const [removedDuplicateCount, setRemovedDuplicateCount] = useState(0);
   const [ignoredInvalidCount, setIgnoredInvalidCount] = useState(0);
   const [setupOptions, setSetupOptions] = useState<SetupOptions>(defaultSetupOptions);
@@ -62,6 +75,7 @@ export function TeacherSetupPage() {
     const result = parseWordList(nextRawWordInput);
     setRawWordInput(nextRawWordInput);
     setParsedWords(result.parsedWords);
+    setTeacherClues((currentValue) => filterTeacherClues(result.parsedWords, currentValue));
     setRemovedDuplicateCount(result.removedDuplicateCount);
     setIgnoredInvalidCount(result.ignoredInvalidCount);
     return result;
@@ -110,14 +124,34 @@ export function TeacherSetupPage() {
     const nextParsedWords = parsedWords.filter((_, index) => index !== indexToRemove);
     setRawWordInput(buildWordInputFromList(nextParsedWords));
     setParsedWords(nextParsedWords);
+    setTeacherClues((currentValue) => filterTeacherClues(nextParsedWords, currentValue));
     setRemovedDuplicateCount(0);
     setIgnoredInvalidCount(0);
+  };
+
+  const handleClueChange = (word: string, nextClue: string) => {
+    clearFeedbackState();
+    const wordKey = getWordKey(word);
+
+    setTeacherClues((currentValue) => {
+      if (!nextClue.trim()) {
+        const nextClues = { ...currentValue };
+        delete nextClues[wordKey];
+        return nextClues;
+      }
+
+      return {
+        ...currentValue,
+        [wordKey]: nextClue,
+      };
+    });
   };
 
   const handleClearList = () => {
     generationLockedRef.current = false;
     setRawWordInput('');
     setParsedWords([]);
+    setTeacherClues({});
     setRemovedDuplicateCount(0);
     setIgnoredInvalidCount(0);
     setValidationError('');
@@ -140,6 +174,7 @@ export function TeacherSetupPage() {
     }
 
     const parsedResult = syncParsedState(rawWordInput);
+    const nextTeacherClues = filterTeacherClues(parsedResult.parsedWords, teacherClues);
 
     if (!rawWordInput.trim()) {
       setValidationError('Enter your spelling list before generating an access code.');
@@ -161,9 +196,11 @@ export function TeacherSetupPage() {
       teacherName,
       accessCode,
       words: parsedResult.parsedWords,
+      teacherClues: nextTeacherClues,
       settings: setupOptions,
     });
 
+    setTeacherClues(nextTeacherClues);
     setGeneratedAccessCode(accessCode);
     setValidationError('');
     setSuccessState({
@@ -195,7 +232,7 @@ export function TeacherSetupPage() {
       <main>
         <PageShell className="teacher-setup-page">
           <section aria-labelledby="teacher-setup-title" className="teacher-setup__intro">
-            <p className="eyebrow">Setup stage</p>
+            <p className="eyebrow">Teacher Setup</p>
             <h1 id="teacher-setup-title">Teacher Setup</h1>
             <p className="teacher-setup__summary">
               Build a spelling session in one guided pass: enter the list, review the cleaned words,
@@ -297,7 +334,15 @@ export function TeacherSetupPage() {
                 ) : null}
               </div>
 
-              <ParsedReviewList emptyMessage={reviewEmptyMessage} onRemoveWord={handleRemoveWord} words={parsedWords} />
+              <ParsedReviewList
+                emptyMessage={reviewEmptyMessage}
+                items={parsedWords.map((word) => ({
+                  word,
+                  teacherClue: teacherClues[getWordKey(word)] ?? '',
+                }))}
+                onClueChange={handleClueChange}
+                onRemoveWord={handleRemoveWord}
+              />
             </Card>
 
             <Card as="section" className="teacher-setup__card">
