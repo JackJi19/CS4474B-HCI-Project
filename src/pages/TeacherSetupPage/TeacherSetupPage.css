@@ -357,3 +357,54 @@
 .teacher-setup__summary-empty {
   color: var(--color-ink-muted);
 }
+
+.teacher-setup__summary-row--active td {
+  background: rgba(215, 238, 235, 0.2);
+}
+
+.teacher-setup__summary-toggle {
+  display: inline-block;
+  margin-top: var(--space-sm);
+}
+
+.teacher-setup__summary-detail-row td {
+  padding: 0;
+  background: rgba(250, 252, 251, 0.92);
+}
+
+.teacher-setup__summary-detail {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+}
+
+.teacher-setup__summary-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin: 0;
+}
+
+.teacher-setup__summary-detail-grid div {
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(14, 107, 101, 0.12);
+}
+
+.teacher-setup__summary-detail-grid dt {
+  color: var(--color-ink-muted);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.teacher-setup__summary-detail-grid dd {
+  margin: var(--space-xs) 0 0;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .teacher-setup__summary-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
